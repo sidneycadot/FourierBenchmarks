@@ -43,7 +43,7 @@ using namespace std;
 //   CUDA
 //   OpenCL?
 //
-// Precision of the implementations?
+// Precision of the implementations? / types of signal
 //
 // Different HW plaforms? (Intel/AMD, AMD/nVidia)
 //
@@ -144,6 +144,44 @@ void slow_inverse_fourier_1d(const vector<complex<double>> & fv, vector<complex<
     }
 }
 
+void fft(complex<double> * z, unsigned n, unsigned stride)
+{
+    if (n == 1)
+    {
+        return;
+    }
+
+    assert (n % 2 == 0);
+
+    fft(z         , n / 2, 2 * stride);
+    fft(z + stride, n / 2, 2 * stride);
+
+    // Now, we need to combine the values of the sub-FFTs
+
+    complex<double> temp[n];
+
+    for (unsigned i = 0; i < n / 2; ++i)
+    {
+        const double turn = -2.0 * M_PI * i / n;
+
+        const complex<double> coeff = polar(1.0, turn);
+
+        temp[2 * i + 0] = z[stride * 2 * i] + coeff * z[stride * (2 * i + 1)];
+        temp[2 * i + 1] = z[stride * 2 * i] - coeff * z[stride * (2 * i + 1)];
+    }
+
+    // And re-arrange them ...
+
+    for (unsigned i = 0; i < n; ++i)
+    {
+        const unsigned j = (i / 2) + (i % 2) * (n / 2);
+
+        assert(j < n);
+
+        z[j * stride] = temp[i];
+    }
+}
+
 template <typename T>
 ostream & print_vector(ostream & os, const vector<T> & v)
 {
@@ -224,35 +262,68 @@ double test_fftw(const unsigned n, const unsigned repeats)
     return duration / repeats;
 }
 
-void show()
+double test_simple(const unsigned n, const unsigned repeats)
 {
-    const unsigned n = 8;
+    vector<complex<double>> v = mk_complex_test_vector(n);
+
+    vector<complex<double>> fv = mk_complex_test_vector(n);
+
+    auto t1 = chrono::high_resolution_clock::now();
+
+    for (unsigned rep = 0; rep < repeats; ++rep)
+    {
+        fv = v;
+        fft(fv.data(), fv.size(), 1);
+    }
+
+    auto t2 = chrono::high_resolution_clock::now();
+
+    double duration = chrono::duration_cast<chrono::nanoseconds>(t2 - t1).count() / 1e9;
+
+    return duration / repeats;
+}
+
+void show1()
+{
+    const unsigned n = 16;
 
     vector<complex<double>> v = mk_complex_test_vector(n);
 
     print_vector(cout, v); cout << endl;
 
-    vector<complex<double>> fv(n);
+    vector<complex<double>> fv = v;
 
     slow_fourier_1d(v, fv);
 
     print_vector(cout, fv); cout << endl;
 }
 
+void show2()
+{
+    const unsigned n = 16;
+
+    vector<complex<double>> v = mk_complex_test_vector(n);
+
+    print_vector(cout, v); cout << endl;
+
+    vector<complex<double>> fv = v;
+
+    //slow_fourier_1d(v, fv);
+    fft(fv.data(), fv.size(), 1);
+
+    print_vector(cout, fv); cout << endl;
+}
+
 int main()
 {
-    show();
-    return 0;
-
-    unsigned rep = 1000;
-
-    for (unsigned n = 1; n < 10; ++n)
+    for (unsigned n = 1; n <= (1u<<20); n *= 2)
     {
-        double duration = test_fftw(n, rep);
+        double duration_fftw   = test_fftw(n, 10);
+        double duration_simple = test_simple(n, 10);
 
-        cout << n << "\t" << rep << "\t" << duration << endl;
+        double speedup = duration_simple / duration_fftw;
 
-        rep = min(1000u, static_cast<unsigned>(0.25 / duration));
+        cout << n << "\t" << duration_fftw << "\t" << duration_simple << "\t" << speedup << endl;
     }
 
     return 0;
