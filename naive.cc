@@ -23,16 +23,24 @@ using namespace std;
 //
 // Implementations:
 //
-// CUDA
-// MKL
-// IPP
-// FFTW
-// FFTS
-// KissFFT
+// CPU:
 //
-// Naive
-// Simple
-// OpenCL?
+//   MKL
+//   IPP
+//   FFTW
+//   FFTS
+//   KissFFT
+//
+//   Slow
+//   Basic
+//
+// GPU:
+//
+//   CUDA
+//   OpenCL?
+//
+// Precision?
+
 bool is_prime(unsigned n)
 {
     if (n < 2)
@@ -111,6 +119,24 @@ void slow_fourier_1d(const vector<complex<double>> & v, vector<complex<double>> 
     }
 }
 
+void slow_inverse_fourier_1d(const vector<complex<double>> & fv, vector<complex<double>> & ifv)
+{
+    const unsigned n = fv.size();
+
+    // Make sure the destination vector has the correct size.
+    assert(ifv.size() == n);
+
+    for (unsigned ti = 0; ti < n; ++ti)
+    {
+        ifv[ti] = 0;
+
+        for (unsigned fi = 0; fi < n; ++fi)
+        {
+            ifv[ti] += polar(1.0, +2.0 * M_PI * fi * ti / n) * fv[fi] / static_cast<double>(n);
+        }
+    }
+}
+
 template <typename T>
 ostream & print_vector(ostream & os, const vector<T> & v)
 {
@@ -130,18 +156,28 @@ ostream & print_vector(ostream & os, const vector<T> & v)
 
 int main()
 {
-    vector<complex<double>> v = mk_complex_test_vector(17);
+    const unsigned n = 17;
+
+    vector<complex<double>> v = mk_complex_test_vector(n);
 
     cout << "v = ";
     print_vector(cout, v);
     cout << ";" << endl;
 
-    vector<complex<double>> fv(v.size());
+    vector<complex<double>> fv(n);
 
     slow_fourier_1d(v, fv);
 
     cout << "fv = ";
     print_vector(cout, fv);
+    cout << ";" << endl;
+
+    vector<complex<double>> ifv(n);
+
+    slow_inverse_fourier_1d(fv, ifv);
+
+    cout << "ifv = ";
+    print_vector(cout, ifv);
     cout << ";" << endl;
 
     return 0;
