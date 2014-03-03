@@ -4,6 +4,7 @@
 #include <vector>
 #include <complex>
 #include <cassert>
+#include <chrono>
 
 using namespace std;
 
@@ -39,7 +40,10 @@ using namespace std;
 //   CUDA
 //   OpenCL?
 //
-// Precision?
+// Precision of the implementations?
+//
+// Different HW plaforms? (Intel/AMD, AMD/nVidia)
+//
 
 bool is_prime(unsigned n)
 {
@@ -154,31 +158,38 @@ ostream & print_vector(ostream & os, const vector<T> & v)
     return os;
 }
 
-int main()
+double test(const unsigned n, const unsigned repeats)
 {
-    const unsigned n = 17;
-
     vector<complex<double>> v = mk_complex_test_vector(n);
-
-    cout << "v = ";
-    print_vector(cout, v);
-    cout << ";" << endl;
 
     vector<complex<double>> fv(n);
 
-    slow_fourier_1d(v, fv);
+    auto t1 = chrono::high_resolution_clock::now();
 
-    cout << "fv = ";
-    print_vector(cout, fv);
-    cout << ";" << endl;
+    for (unsigned rep = 0; rep < repeats; ++rep)
+    {
+        slow_fourier_1d(v, fv);
+    }
 
-    vector<complex<double>> ifv(n);
+    auto t2 = chrono::high_resolution_clock::now();
 
-    slow_inverse_fourier_1d(fv, ifv);
+    double duration = chrono::duration_cast<chrono::nanoseconds>(t2 - t1).count() / 1e9;
 
-    cout << "ifv = ";
-    print_vector(cout, ifv);
-    cout << ";" << endl;
+    return duration / repeats;
+}
+
+int main()
+{
+    unsigned rep = 1000;
+
+    for (unsigned n = 0; n < 1000; ++n)
+    {
+        double duration = test(n, rep);
+
+        cout << n << "\t" << rep << "\t" << duration << endl;
+
+        rep = min(1000u, static_cast<unsigned>(0.25 / duration));
+    }
 
     return 0;
 }
