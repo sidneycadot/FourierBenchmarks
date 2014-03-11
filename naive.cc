@@ -9,45 +9,6 @@
 
 using namespace std;
 
-// Variations:
-//
-//     Number of transforms
-//     Forward vs inverse
-//     Scaling
-//     Real vs complex
-//     Basic data type (float, double, long double)
-//
-//     Dimensionality of transform
-//     Memory layout
-//     In-place or not
-//
-//     Multithreading
-//     Optimization (planning) level (FFTW)
-//     Preserve input or not
-
-// Implementations:
-//
-// CPU:
-//
-//   MKL
-//   IPP
-//   FFTW
-//   FFTS
-//   KissFFT
-//
-//   Slow
-//   Basic
-//
-// GPU:
-//
-//   CUDA
-//   OpenCL?
-//
-// Precision of the implementations? / types of signal
-//
-// Different HW plaforms? (Intel/AMD, AMD/nVidia)
-//
-
 bool is_prime(unsigned n)
 {
     if (n < 2)

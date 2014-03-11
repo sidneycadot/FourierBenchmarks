@@ -4,6 +4,7 @@
 #include <complex>
 #include <cassert>
 #include <mkl_dfti.h>
+#include <mkl_service.h>
 
 using namespace std;
 
@@ -235,68 +236,72 @@ enum DFTI_CONFIG_PARAM
 };
 #endif
 
-void show_mkl_dfti_descriptor_info(const DFTI_DESCRIPTOR_HANDLE & descriptor)
+ostream & show_mkl_dfti_descriptor_info(ostream & out, const DFTI_DESCRIPTOR_HANDLE & descriptor)
 {
     // DFTI_PRECISION
 
     {
-        DFTI_CONFIG_VALUE value;
+        DFTI_CONFIG_VALUE precision;
 
-        MKL_LONG status = DftiGetValue(descriptor, DFTI_PRECISION, &value);
+        MKL_LONG status = DftiGetValue(descriptor, DFTI_PRECISION, &precision);
         assert(status == DFTI_NO_ERROR);
 
-        cout << "DFTI_PRECISION ................... : " << DftiConfigValueToString(value) << endl;
+        out << "DFTI_PRECISION ................... : " << DftiConfigValueToString(precision) << endl;
     }
 
     // DFTI_FORWARD_DOMAIN
 
     {
-        DFTI_CONFIG_VALUE value;
+        DFTI_CONFIG_VALUE forward_domain;
 
-        MKL_LONG status = DftiGetValue(descriptor, DFTI_FORWARD_DOMAIN, &value);
+        MKL_LONG status = DftiGetValue(descriptor, DFTI_FORWARD_DOMAIN, &forward_domain);
         assert(status == DFTI_NO_ERROR);
 
-        cout << "DFTI_FORWARD_DOMAIN .............. : " << DftiConfigValueToString(value) << endl;
+        out << "DFTI_FORWARD_DOMAIN .............. : " << DftiConfigValueToString(forward_domain) << endl;
     }
 
-    // DFTI_DIMENSION and DFTI_LENGTH
+    // DFTI_DIMENSION
+
+    MKL_LONG number_of_dimensions; // number of dimensions
 
     {
-        MKL_LONG number_of_dimensions;
-
         MKL_LONG status = DftiGetValue(descriptor, DFTI_DIMENSION, &number_of_dimensions);
         assert(status == DFTI_NO_ERROR);
 
-        cout << "DFTI_DIMENSION ................... : " << number_of_dimensions << endl;
+        out << "DFTI_DIMENSION ................... : " << number_of_dimensions << endl;
+    }
 
+    // DFTI_LENGTH
+
+    {
         MKL_LONG dim[number_of_dimensions];
 
-        status = DftiGetValue(descriptor, DFTI_LENGTHS, dim);
+        MKL_LONG status = DftiGetValue(descriptor, DFTI_LENGTHS, dim);
         assert(status == DFTI_NO_ERROR);
 
-        cout << "DFTI_LENGTHS ..................... : {";
+        out << "DFTI_LENGTHS ..................... : {";
 
         for (unsigned i = 0; i < number_of_dimensions; ++i)
         {
             if (i != 0)
             {
-                cout << ", ";
+                out << ", ";
             }
-            cout << dim[i];
+            out << dim[i];
         }
 
-        cout << "}" << endl;
+        out << "}" << endl;
     }
 
     // DFTI_PLACEMENT
 
     {
-        DFTI_CONFIG_VALUE value;
+        DFTI_CONFIG_VALUE placement;
 
-        MKL_LONG status = DftiGetValue(descriptor, DFTI_PLACEMENT, &value);
+        MKL_LONG status = DftiGetValue(descriptor, DFTI_PLACEMENT, &placement);
         assert(status == DFTI_NO_ERROR);
 
-        cout << "DFTI_PLACEMENT ................... : " << DftiConfigValueToString(value) << endl;
+        out << "DFTI_PLACEMENT ................... : " << DftiConfigValueToString(placement) << endl;
     }
 
     // DFTI_FORWARD_SCALE
@@ -307,7 +312,7 @@ void show_mkl_dfti_descriptor_info(const DFTI_DESCRIPTOR_HANDLE & descriptor)
         MKL_LONG status = DftiGetValue(descriptor, DFTI_FORWARD_SCALE, &forward_scale);
         assert(status == DFTI_NO_ERROR);
 
-        cout << "DFTI_FORWARD_SCALE ............... : " << forward_scale << endl;
+        out << "DFTI_FORWARD_SCALE ............... : " << forward_scale << endl;
     }
 
     // DFTI_BACKWARD_SCALE
@@ -318,7 +323,7 @@ void show_mkl_dfti_descriptor_info(const DFTI_DESCRIPTOR_HANDLE & descriptor)
         MKL_LONG status = DftiGetValue(descriptor, DFTI_FORWARD_SCALE, &backward_scale);
         assert(status == DFTI_NO_ERROR);
 
-        cout << "DFTI_BACKWARD_SCALE .............. : " << backward_scale << endl;
+        out << "DFTI_BACKWARD_SCALE .............. : " << backward_scale << endl;
     }
 
     // DFTI_NUMBER_OF_USER_THREADS
@@ -329,7 +334,7 @@ void show_mkl_dfti_descriptor_info(const DFTI_DESCRIPTOR_HANDLE & descriptor)
         MKL_LONG status = DftiGetValue(descriptor, DFTI_NUMBER_OF_USER_THREADS, &number_of_user_threads);
         assert(status == DFTI_NO_ERROR);
 
-        cout << "DFTI_NUMBER_OF_USER_THREADS ...... : " << number_of_user_threads << endl;
+        out << "DFTI_NUMBER_OF_USER_THREADS ...... : " << number_of_user_threads << endl;
     }
 
     // DFTI_THREAD_LIMIT
@@ -340,72 +345,63 @@ void show_mkl_dfti_descriptor_info(const DFTI_DESCRIPTOR_HANDLE & descriptor)
         MKL_LONG status = DftiGetValue(descriptor, DFTI_THREAD_LIMIT, &thread_limit);
         assert(status == DFTI_NO_ERROR);
 
-        cout << "DFTI_THREAD_LIMIT ................ : " << thread_limit << endl;
+        out << "DFTI_THREAD_LIMIT ................ : " << thread_limit << endl;
     }
+
     // DFTI_DESCRIPTOR_NAME
 
     {
         // Actual max length is (DFTI_MAX_NAME_LENGTH - 1); also reserve room for terminating NUL character.
-        char dft_descriptor_name[DFTI_MAX_NAME_LENGTH];
+        char descriptor_name[DFTI_MAX_NAME_LENGTH];
 
-        MKL_LONG status = DftiGetValue(descriptor, DFTI_DESCRIPTOR_NAME, &dft_descriptor_name);
+        MKL_LONG status = DftiGetValue(descriptor, DFTI_DESCRIPTOR_NAME, &descriptor_name);
         assert(status == DFTI_NO_ERROR);
 
-        cout << "DFTI_DESCRIPTOR_NAME ............. : \"" << dft_descriptor_name << "\"" << endl;
+        out << "DFTI_DESCRIPTOR_NAME ............. : \"" << descriptor_name << "\"" << endl;
     }
 
     // DFTI_INPUT_STRIDES
 
     {
-        MKL_LONG number_of_dimensions;
+        MKL_LONG input_strides[number_of_dimensions];
 
-        MKL_LONG status = DftiGetValue(descriptor, DFTI_DIMENSION, &number_of_dimensions);
+        MKL_LONG status = DftiGetValue(descriptor, DFTI_INPUT_STRIDES, input_strides);
         assert(status == DFTI_NO_ERROR);
 
-        MKL_LONG strides[number_of_dimensions];
-
-        status = DftiGetValue(descriptor, DFTI_INPUT_STRIDES, strides);
-        assert(status == DFTI_NO_ERROR);
-
-        cout << "DFTI_INPUT_STRIDES ............... : {";
+        out << "DFTI_INPUT_STRIDES ............... : {";
 
         for (unsigned i = 0; i < number_of_dimensions; ++i)
         {
             if (i != 0)
             {
-                cout << ", ";
+                out << ", ";
             }
-            cout << strides[i];
+            out << input_strides[i];
         }
 
-        cout << "}" << endl;
+        out << "}" << endl;
     }
 
     // DFTI_OUTPUT_STRIDES
 
     {
-        MKL_LONG number_of_dimensions;
+        MKL_LONG output_strides[number_of_dimensions];
 
-        MKL_LONG status = DftiGetValue(descriptor, DFTI_DIMENSION, &number_of_dimensions);
+        MKL_LONG status = DftiGetValue(descriptor, DFTI_OUTPUT_STRIDES, output_strides);
         assert(status == DFTI_NO_ERROR);
 
-        MKL_LONG strides[number_of_dimensions];
-
-        status = DftiGetValue(descriptor, DFTI_OUTPUT_STRIDES, strides);
-        assert(status == DFTI_NO_ERROR);
-
-        cout << "DFTI_OUTPUT_STRIDES .............. : {";
+        out << "DFTI_OUTPUT_STRIDES .............. : {";
 
         for (unsigned i = 0; i < number_of_dimensions; ++i)
         {
             if (i != 0)
             {
-                cout << ", ";
+                out << ", ";
             }
-            cout << strides[i];
+            out << output_strides[i];
         }
 
-        cout << "}" << endl;
+        out << "}" << endl;
     }
 
     // DFTI_NUMBER_OF_TRANSFORMS
@@ -416,7 +412,7 @@ void show_mkl_dfti_descriptor_info(const DFTI_DESCRIPTOR_HANDLE & descriptor)
         MKL_LONG status = DftiGetValue(descriptor, DFTI_NUMBER_OF_TRANSFORMS, &number_of_transforms);
         assert(status == DFTI_NO_ERROR);
 
-        cout << "DFTI_NUMBER_OF_TRANSFORMS ........ : " << number_of_transforms << endl;
+        out << "DFTI_NUMBER_OF_TRANSFORMS ........ : " << number_of_transforms << endl;
     }
 
     // DFTI_INPUT_DISTANCE
@@ -427,7 +423,7 @@ void show_mkl_dfti_descriptor_info(const DFTI_DESCRIPTOR_HANDLE & descriptor)
         MKL_LONG status = DftiGetValue(descriptor, DFTI_INPUT_DISTANCE, &input_distance);
         assert(status == DFTI_NO_ERROR);
 
-        cout << "DFTI_INPUT_DISTANCE .............. : " << input_distance << endl;
+        out << "DFTI_INPUT_DISTANCE .............. : " << input_distance << endl;
     }
 
     // DFTI_OUTPUT_DISTANCE
@@ -438,84 +434,84 @@ void show_mkl_dfti_descriptor_info(const DFTI_DESCRIPTOR_HANDLE & descriptor)
         MKL_LONG status = DftiGetValue(descriptor, DFTI_OUTPUT_DISTANCE, &output_distance);
         assert(status == DFTI_NO_ERROR);
 
-        cout << "DFTI_OUTPUT_DISTANCE ............. : " << output_distance << endl;
+        out << "DFTI_OUTPUT_DISTANCE ............. : " << output_distance << endl;
     }
 
     // DFTI_COMPLEX_STORAGE
 
     {
-        DFTI_CONFIG_VALUE value;
+        DFTI_CONFIG_VALUE complex_storage;
 
-        MKL_LONG status = DftiGetValue(descriptor, DFTI_COMPLEX_STORAGE, &value);
+        MKL_LONG status = DftiGetValue(descriptor, DFTI_COMPLEX_STORAGE, &complex_storage);
         assert(status == DFTI_NO_ERROR);
 
-        cout << "DFTI_COMPLEX_STORAGE ............. : " << DftiConfigValueToString(value) << endl;
+        out << "DFTI_COMPLEX_STORAGE ............. : " << DftiConfigValueToString(complex_storage) << endl;
     }
 
     // DFTI_REAL_STORAGE
 
     {
-        DFTI_CONFIG_VALUE value;
+        DFTI_CONFIG_VALUE real_storage;
 
-        MKL_LONG status = DftiGetValue(descriptor, DFTI_REAL_STORAGE, &value);
+        MKL_LONG status = DftiGetValue(descriptor, DFTI_REAL_STORAGE, &real_storage);
         assert(status == DFTI_NO_ERROR);
 
-        cout << "DFTI_REAL_STORAGE ................ : " << DftiConfigValueToString(value) << endl;
+        out << "DFTI_REAL_STORAGE ................ : " << DftiConfigValueToString(real_storage) << endl;
     }
 
     // DFTI_CONJUGATE_EVEN_STORAGE
 
     {
-        DFTI_CONFIG_VALUE value;
+        DFTI_CONFIG_VALUE conjugate_even_storage;
 
-        MKL_LONG status = DftiGetValue(descriptor, DFTI_CONJUGATE_EVEN_STORAGE, &value);
+        MKL_LONG status = DftiGetValue(descriptor, DFTI_CONJUGATE_EVEN_STORAGE, &conjugate_even_storage);
         assert(status == DFTI_NO_ERROR);
 
-        cout << "DFTI_CONJUGATE_EVEN_STORAGE ...... : " << DftiConfigValueToString(value) << endl;
+        out << "DFTI_CONJUGATE_EVEN_STORAGE ...... : " << DftiConfigValueToString(conjugate_even_storage) << endl;
     }
 
     // DFTI_PACKED_FORMAT
 
     {
-        DFTI_CONFIG_VALUE value;
+        DFTI_CONFIG_VALUE packed_format;
 
-        MKL_LONG status = DftiGetValue(descriptor, DFTI_PACKED_FORMAT, &value);
+        MKL_LONG status = DftiGetValue(descriptor, DFTI_PACKED_FORMAT, &packed_format);
         assert(status == DFTI_NO_ERROR);
 
-        cout << "DFTI_PACKED_FORMAT ............... : " << DftiConfigValueToString(value) << endl;
+        out << "DFTI_PACKED_FORMAT ............... : " << DftiConfigValueToString(packed_format) << endl;
     }
 
     // DFTI_WORKSPACE
 
     {
-        DFTI_CONFIG_VALUE value;
+        DFTI_CONFIG_VALUE workspace;
 
-        MKL_LONG status = DftiGetValue(descriptor, DFTI_WORKSPACE, &value);
+        MKL_LONG status = DftiGetValue(descriptor, DFTI_WORKSPACE, &workspace);
         assert(status == DFTI_NO_ERROR);
 
-        cout << "DFTI_WORKSPACE ................... : " << DftiConfigValueToString(value) << endl;
+        out << "DFTI_WORKSPACE ................... : " << DftiConfigValueToString(workspace) << endl;
     }
 
     // DFTI_ORDERING
 
     {
-        DFTI_CONFIG_VALUE value;
+        DFTI_CONFIG_VALUE ordering;
 
-        MKL_LONG status = DftiGetValue(descriptor, DFTI_ORDERING, &value);
+        MKL_LONG status = DftiGetValue(descriptor, DFTI_ORDERING, &ordering);
         assert(status == DFTI_NO_ERROR);
 
-        cout << "DFTI_ORDERING .................... : " << DftiConfigValueToString(value) << endl;
+        out << "DFTI_ORDERING .................... : " << DftiConfigValueToString(ordering) << endl;
     }
 
     // DFTI_COMMIT_STATUS
 
     {
-        DFTI_CONFIG_VALUE value;
+        DFTI_CONFIG_VALUE commit_status;
 
-        MKL_LONG status = DftiGetValue(descriptor, DFTI_COMMIT_STATUS, &value);
+        MKL_LONG status = DftiGetValue(descriptor, DFTI_COMMIT_STATUS, &commit_status);
         assert(status == DFTI_NO_ERROR);
 
-        cout << "DFTI_COMMIT_STATUS ............... : " << DftiConfigValueToString(value) << endl;
+        out << "DFTI_COMMIT_STATUS ............... : " << DftiConfigValueToString(commit_status) << endl;
     }
 
     // DFTI_VERSION
@@ -527,8 +523,10 @@ void show_mkl_dfti_descriptor_info(const DFTI_DESCRIPTOR_HANDLE & descriptor)
         MKL_LONG status = DftiGetValue(descriptor, DFTI_VERSION, &dft_version);
         assert(status == DFTI_NO_ERROR);
 
-        cout << "DFTI_VERSION ..................... : \"" << dft_version << "\"" << endl;
+        out << "DFTI_VERSION ..................... : \"" << dft_version << "\"" << endl;
     }
+
+    return out;
 }
 
 int main()
@@ -554,7 +552,7 @@ int main()
     status = DftiCommitDescriptor(descriptor);
     assert(status == DFTI_NO_ERROR);
 
-    show_mkl_dfti_descriptor_info(descriptor);
+    show_mkl_dfti_descriptor_info(cout, descriptor);
 
     vector<complex<double>> fvec(n);
 
@@ -567,6 +565,8 @@ int main()
     cout << "fvec: ";
     print_vector(cout, fvec);
     cout << endl;
+
+    mkl_free_buffers();
 
     return 0;
 }
