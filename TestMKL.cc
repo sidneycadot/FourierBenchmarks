@@ -1,125 +1,88 @@
 
+////////////////
+// TestMKL.cc //
+////////////////
+
 #include <iostream>
 #include <vector>
 #include <complex>
 #include <cassert>
+#include <chrono>
+#include <limits>
+
 #include <mkl_dfti.h>
 #include <mkl_service.h>
 
+#include "print_collection.h"
+#include "testvectors.h"
+
 using namespace std;
 
-bool is_prime(unsigned n)
-{
-    if (n < 2)
-    {
-        return false;
-    }
-
-    for (unsigned d = 2; d * d <= n; ++d)
-    {
-        if (n % d == 0)
-        {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-vector<complex<double>> mk_complex_test_vector(unsigned n)
-{
-    vector<complex<double>> v;
-    v.reserve(n);
-
-    unsigned p = 0;
-    while (v.size() < n)
-    {
-        while (!is_prime(p))
-        {
-            ++p;
-        }
-
-        v.push_back(complex<double>(sqrt(p), cbrt(p)));
-
-        ++p;
-    }
-
-    return v;
-}
-
-template <typename T>
-ostream & print_vector(ostream & os, const vector<T> & v)
-{
-    os << "{";
-    for (unsigned i = 0; i < v.size(); ++i)
-    {
-        if (i != 0)
-        {
-            os << ", ";
-        }
-        os << v[i];
-    }
-    os << "}";
-
-    return os;
-}
-
-string DftiConfigValueToString(const DFTI_CONFIG_VALUE & value)
+static string DftiConfigValueToString(const DFTI_CONFIG_VALUE & value)
 {
     bool NOT_IMPLEMENTED = false;
     const char * str = nullptr;
     switch (value)
     {
         // DFTI_COMMIT_STATUS
-        case DFTI_COMMITTED   : str = "DFTI_COMMITTED"; break;
-        case DFTI_UNCOMMITTED : str = "DFTI_UNCOMMITTED"; break;
+
+        case DFTI_COMMITTED   : str = "DFTI_COMMITTED"   ; break;
+        case DFTI_UNCOMMITTED : str = "DFTI_UNCOMMITTED" ; break;
 
         // DFTI_FORWARD_DOMAIN
-        case DFTI_COMPLEX        : str = "DFTI_COMPLEX"; break;
-        case DFTI_REAL           : str = "DFTI_REAL"; break;
-     // case DFTI_CONJUGATE_EVEN : str = "DFTI_CONJUGATE_EVEN"; NOT_IMPLEMENTED = true; break;
+
+        case DFTI_COMPLEX        : str = "DFTI_COMPLEX"  ; break;
+        case DFTI_REAL           : str = "DFTI_REAL"     ; break;
+
+        // case DFTI_CONJUGATE_EVEN : str = "DFTI_CONJUGATE_EVEN"; NOT_IMPLEMENTED = true; break;
 
         // DFTI_PRECISION
+
         case DFTI_SINGLE : str = "DFTI_SINGLE"; break;
         case DFTI_DOUBLE : str = "DFTI_DOUBLE"; break;
 
         // DFTI_FORWARD_SIGN
-     // case DFTI_NEGATIVE : str = "DFTI_NEGATIVE"; NOT_IMPLEMENTED = true; break;
-     // case DFTI_POSITIVE : str = "DFTI_POSITIVE"; NOT_IMPLEMENTED = true; break;
+
+        // case DFTI_NEGATIVE : str = "DFTI_NEGATIVE"; NOT_IMPLEMENTED = true; break;
+        // case DFTI_POSITIVE : str = "DFTI_POSITIVE"; NOT_IMPLEMENTED = true; break;
 
         // DFTI_COMPLEX_STORAGE and DFTI_CONJUGATE_EVEN_STORAGE
 
         case DFTI_COMPLEX_COMPLEX : str = "DFTI_COMPLEX_COMPLEX"; break;
-        case DFTI_COMPLEX_REAL    : str = "DFTI_COMPLEX_REAL"; break;
+        case DFTI_COMPLEX_REAL    : str = "DFTI_COMPLEX_REAL"   ; break;
 
         // DFTI_REAL_STORAGE
         case DFTI_REAL_COMPLEX : str = "DFTI_REAL_COMPLEX"; break;
-        case DFTI_REAL_REAL    : str = "DFTI_REAL_REAL"; break;
+        case DFTI_REAL_REAL    : str = "DFTI_REAL_REAL"   ; break;
 
         // DFTI_PLACEMENT
-        case DFTI_INPLACE     : str = "DFTI_INPLACE"; break;
+        case DFTI_INPLACE     : str = "DFTI_INPLACE"    ; break;
         case DFTI_NOT_INPLACE : str = "DFTI_NOT_INPLACE"; break;
 
         // DFTI_INITIALIZATION_EFFORT
-     // case DFTI_LOW    : str = "DFTI_LOW";    NOT_IMPLEMENTED = true; break;
-     // case DFTI_MEDIUM : str = "DFTI_MEDIUM"; NOT_IMPLEMENTED = true; break;
-     // case DFTI_HIGH   : str = "DFTI_HIGH";   NOT_IMPLEMENTED = true; break;
+
+        // case DFTI_LOW    : str = "DFTI_LOW";    NOT_IMPLEMENTED = true; break;
+        // case DFTI_MEDIUM : str = "DFTI_MEDIUM"; NOT_IMPLEMENTED = true; break;
+        // case DFTI_HIGH   : str = "DFTI_HIGH";   NOT_IMPLEMENTED = true; break;
 
         // DFTI_ORDERING
-        case DFTI_ORDERED            : str = "DFTI_ORDERED"; break;
-        case DFTI_BACKWARD_SCRAMBLED : str = "DFTI_BACKWARD_SCRAMBLED"; break;
+
+        case DFTI_ORDERED            : str = "DFTI_ORDERED"            ; break;
+        case DFTI_BACKWARD_SCRAMBLED : str = "DFTI_BACKWARD_SCRAMBLED" ; break;
+
      // case DFTI_FORWARD_SCRAMBLED  : str = "DFTI_FORWARD_SCRAMBLED"; NOT_IMPLEMENTED = true; break;
 
         // Allow/avoid certain usages
-        case DFTI_ALLOW : str = "DFTI_ALLOW"; break;
-        case DFTI_AVOID : str = "DFTI_AVOID"; break;
-        case DFTI_NONE  : str = "DFTI_NONE"; break;
+
+        case DFTI_ALLOW : str = "DFTI_ALLOW" ; break;
+        case DFTI_AVOID : str = "DFTI_AVOID" ; break;
+        case DFTI_NONE  : str = "DFTI_NONE"  ; break;
 
         // DFTI_PACKED_FORMAT (for storing conjugate-even finite sequence in real array)
-        case DFTI_CCS_FORMAT  : str = "DFTI_CCS_FORMAT"; break;
-        case DFTI_PACK_FORMAT : str = "DFTI_PACK_FORMAT"; break;
-        case DFTI_PERM_FORMAT : str = "DFTI_PERM_FORMAT"; break;
-        case DFTI_CCE_FORMAT  : str = "DFTI_CCE_FORMAT"; break;
+        case DFTI_CCS_FORMAT  : str = "DFTI_CCS_FORMAT"  ; break;
+        case DFTI_PACK_FORMAT : str = "DFTI_PACK_FORMAT" ; break;
+        case DFTI_PERM_FORMAT : str = "DFTI_PERM_FORMAT" ; break;
+        case DFTI_CCE_FORMAT  : str = "DFTI_CCE_FORMAT"  ; break;
     }
 
     if (str)
@@ -139,104 +102,7 @@ string DftiConfigValueToString(const DFTI_CONFIG_VALUE & value)
     }
 }
 
-#if 0
-enum DFTI_CONFIG_PARAM
-{
-    /* Domain for forward transform. No default value */
-    DFTI_FORWARD_DOMAIN = 0,
-
-    /* Dimensionality, or rank. No default value */
-    DFTI_DIMENSION = 1,
-
-    /* Length(s) of transform. No default value */
-    DFTI_LENGTHS = 2,
-
-    /* Floating point precision. No default value */
-    DFTI_PRECISION = 3,
-
-    /* Scale factor for forward transform [1.0] */
-    DFTI_FORWARD_SCALE  = 4,
-
-    /* Scale factor for backward transform [1.0] */
-    DFTI_BACKWARD_SCALE = 5,
-
-    /* Exponent sign for forward transform [DFTI_NEGATIVE]  */
-    /* DFTI_FORWARD_SIGN = 6, ## NOT IMPLEMENTED */
-
-    /* Number of data sets to be transformed [1] */
-    DFTI_NUMBER_OF_TRANSFORMS = 7,
-
-    /* Storage of finite complex-valued sequences in complex domain
-       [DFTI_COMPLEX_COMPLEX] */
-    DFTI_COMPLEX_STORAGE = 8,
-
-    /* Storage of finite real-valued sequences in real domain
-       [DFTI_REAL_REAL] */
-    DFTI_REAL_STORAGE = 9,
-
-    /* Storage of finite complex-valued sequences in conjugate-even
-       domain [DFTI_COMPLEX_REAL] */
-    DFTI_CONJUGATE_EVEN_STORAGE = 10,
-
-    /* Placement of result [DFTI_INPLACE] */
-    DFTI_PLACEMENT = 11,
-
-    /* Generalized strides for input data layout [tigth, row-major for
-       C] */
-    DFTI_INPUT_STRIDES = 12,
-
-    /* Generalized strides for output data layout [tight, row-major
-       for C] */
-    DFTI_OUTPUT_STRIDES = 13,
-
-    /* Distance between first input elements for multiple transforms
-       [0] */
-    DFTI_INPUT_DISTANCE = 14,
-
-    /* Distance between first output elements for multiple transforms
-       [0] */
-    DFTI_OUTPUT_DISTANCE = 15,
-
-    /* Effort spent in initialization [DFTI_MEDIUM] */
-    /* DFTI_INITIALIZATION_EFFORT = 16, ## NOT IMPLEMENTED */
-
-    /* Use of workspace during computation [DFTI_ALLOW] */
-    DFTI_WORKSPACE = 17,
-
-    /* Ordering of the result [DFTI_ORDERED] */
-    DFTI_ORDERING = 18,
-
-    /* Possible transposition of result [DFTI_NONE] */
-    DFTI_TRANSPOSE = 19,
-
-    /* User-settable descriptor name [""] */
-    DFTI_DESCRIPTOR_NAME = 20, /* DEPRECATED */
-
-    /* Packing format for DFTI_COMPLEX_REAL storage of finite
-       conjugate-even sequences [DFTI_CCS_FORMAT] */
-    DFTI_PACKED_FORMAT = 21,
-
-    /* Commit status of the descriptor - R/O parameter */
-    DFTI_COMMIT_STATUS = 22,
-
-    /* Version string for this DFTI implementation - R/O parameter */
-    DFTI_VERSION = 23,
-
-    /* Ordering of the forward transform - R/O parameter */
-    /* DFTI_FORWARD_ORDERING  = 24, ## NOT IMPLEMENTED */
-
-    /* Ordering of the backward transform - R/O parameter */
-    /* DFTI_BACKWARD_ORDERING = 25, ## NOT IMPLEMENTED */
-
-    /* Number of user threads that share the descriptor [1] */
-    DFTI_NUMBER_OF_USER_THREADS = 26,
-
-    /* Limit the number of threads used by this descriptor [0 = don't care] */
-    DFTI_THREAD_LIMIT = 27
-};
-#endif
-
-ostream & show_mkl_dfti_descriptor_info(ostream & out, const DFTI_DESCRIPTOR_HANDLE & descriptor)
+void print_mkl_dfti_descriptor_info(ostream & out, const DFTI_DESCRIPTOR_HANDLE & descriptor)
 {
     // DFTI_PRECISION
 
@@ -525,25 +391,42 @@ ostream & show_mkl_dfti_descriptor_info(ostream & out, const DFTI_DESCRIPTOR_HAN
 
         out << "DFTI_VERSION ..................... : \"" << dft_version << "\"" << endl;
     }
-
-    return out;
 }
 
-int main()
+template <typename real_type>
+struct MklTraits
 {
-    const unsigned n = 8;
+};
 
-    vector<complex<double>> tvec = mk_complex_test_vector(n);
+template <>
+struct MklTraits<float>
+{
+    static const enum DFTI_CONFIG_VALUE precision = DFTI_SINGLE;
+};
 
-    cout << "tvec: ";
-    print_vector(cout, tvec);
-    cout << endl;
+template <>
+struct MklTraits<double>
+{
+    static const enum DFTI_CONFIG_VALUE precision = DFTI_DOUBLE;
+};
+
+template <typename real_type>
+static double test_complex_1d(const unsigned & n, const unsigned & repeats, const bool & noisy)
+{
+    vector<complex<real_type>> tvec = mk_complex_test_vector<real_type>(n);
+
+    if (noisy)
+    {
+        cout << "tvec: ";
+        print_collection(cout, tvec);
+        cout << endl;
+    }
 
     DFTI_DESCRIPTOR_HANDLE descriptor;
 
     MKL_LONG status;
 
-    status = DftiCreateDescriptor(&descriptor, DFTI_DOUBLE, DFTI_COMPLEX, 1, n);
+    status = DftiCreateDescriptor(&descriptor, MklTraits<real_type>::precision, DFTI_COMPLEX, 1, n);
     assert(status == DFTI_NO_ERROR);
 
     status = DftiSetValue(descriptor, DFTI_PLACEMENT, DFTI_NOT_INPLACE);
@@ -552,21 +435,57 @@ int main()
     status = DftiCommitDescriptor(descriptor);
     assert(status == DFTI_NO_ERROR);
 
-    show_mkl_dfti_descriptor_info(cout, descriptor);
+    if (noisy)
+    {
+        print_mkl_dfti_descriptor_info(cout, descriptor);
+    }
 
-    vector<complex<double>> fvec(n);
+    vector<complex<real_type>> fvec(n);
 
-    status = DftiComputeForward(descriptor, tvec.data(), fvec.data());
-    assert(status == DFTI_NO_ERROR);
+    double min_duration = numeric_limits<double>::infinity();
+
+    for (unsigned rep = 0; rep < repeats; ++rep)
+    {
+        std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
+
+        status = DftiComputeForward(descriptor, tvec.data(), fvec.data());
+        assert(status == DFTI_NO_ERROR);
+
+        std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
+
+        const double duration = std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count() / 1e9;
+
+        min_duration = std::min(min_duration, duration);
+    }
 
     status = DftiFreeDescriptor(&descriptor);
     assert(status == DFTI_NO_ERROR);
 
-    cout << "fvec: ";
-    print_vector(cout, fvec);
-    cout << endl;
+    if (noisy)
+    {
+        cout << "fvec: ";
+        print_collection(cout, fvec);
+        cout << endl;
+    }
+
+
+    return min_duration;
+}
+
+int main()
+{
+    unsigned n = 0;
+
+    for (n = 1; n <= 20000; ++n)
+    {
+        double durationFloat = test_complex_1d<float>(n, 100, false);
+
+        double durationDouble = test_complex_1d<double>(n, 100, false);
+
+        cout << n << " " << durationFloat << " " << durationDouble << endl;
+    }
 
     mkl_free_buffers();
 
-    return 0;
+    return EXIT_SUCCESS;
 }

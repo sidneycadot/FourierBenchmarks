@@ -8,6 +8,8 @@
 #include <mpc.h>
 #include <gmp.h>
 
+#include "print_collection.h"
+
 using namespace std;
 
 template <typename real_type>
@@ -58,7 +60,7 @@ vector<complex<real_type>> mk_complex_gauss_vector(gmp_randstate_t & randstate, 
     return v;
 }
 
-void recursive_fft(std::complex<real_type> * z, const unsigned n, const unsigned stride)
+void mpfr_recursive_fft(std::complex<real_type> * z, const unsigned n, const unsigned stride)
 {
     if (n == 1)
     {
@@ -67,8 +69,8 @@ void recursive_fft(std::complex<real_type> * z, const unsigned n, const unsigned
 
     assert (n % 2 == 0);
 
-    recursive_fft(z         , n / 2, 2 * stride);
-    recursive_fft(z + stride, n / 2, 2 * stride);
+    mpfr_recursive_fft(z         , n / 2, 2 * stride);
+    mpfr_recursive_fft(z + stride, n / 2, 2 * stride);
 
     // Now, we need to combine the values of the sub-FFTs
 
@@ -96,6 +98,7 @@ void recursive_fft(std::complex<real_type> * z, const unsigned n, const unsigned
     }
 }
 
+#if 0
 template <typename real_type>
 void recursive_inverse_fft(std::complex<real_type> * z, const unsigned n, const unsigned stride)
 {
@@ -134,32 +137,7 @@ void recursive_inverse_fft(std::complex<real_type> * z, const unsigned n, const 
         z[j * stride] = temp[i];
     }
 }
-
-template <typename Collection>
-ostream & print_vector(ostream & os, const Collection & collection)
-{
-    bool first = true;
-
-    os << "{";
-
-    for (const auto & element : collection)
-    {
-        if (first)
-        {
-            first = false;
-        }
-        else
-        {
-            os << ", ";
-        }
-
-        os << element;
-    }
-
-    os << "}";
-
-    return os;
-}
+#endif
 
 int main()
 {
@@ -170,7 +148,7 @@ int main()
     vector<complex<float>>  vf = mk_complex_gauss_vector<float>(randstate, 10);
 
     cout << "vf: ";
-    print_vector(cout, vf);
+    print_collection(cout, vf);
     cout << endl;
 
     gmp_randclear(randstate);
@@ -180,7 +158,7 @@ int main()
     vector<complex<double>> vd = mk_complex_gauss_vector<double>(randstate, 10);
 
     cout << "vd: ";
-    print_vector(cout, vd);
+    print_collection(cout, vd);
     cout << endl;
 
     gmp_randclear(randstate);
@@ -192,7 +170,7 @@ int main()
     gmp_randclear(randstate);
 
     cout << "vld: ";
-    print_vector(cout, vld);
+    print_collection(cout, vld);
     cout << endl;
 
     // Get gaussian random number.
