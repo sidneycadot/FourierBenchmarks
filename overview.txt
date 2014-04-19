@@ -1,0 +1,63 @@
+* MKL
+* IPP
+* CuFFT
+* FFTW
+* FFTS
+* KissFFT
+
+MKL
+IPP
+CuFFT
+FFTW                               (fload, double, long double)
+FFTS
+KissFFT
+
+=============== MKL
+
+name .......................................................... : MKL
+long name ..................................................... : Intel Math Kernel License
+license ....................................................... : (1) Commercial (2) Academic / Free
+source code ................................................... : closed
+
+planner effort ................................................ : fixed
+overwrite-input ............................................... : no
+planner needs pointers? ....................................... : no
+planner may assumed unaligned access .......................... : no (unable to specify).
+execution may destroy input (out-of-place transform) .......... : never
+precision ..................................................... : float, double
+real/complex .................................................. : R<->C and C<->C supported
+dimensionality ................................................ : generic n-dimensional, with "stride"
+memory layout ................................................. : several options (complicated)
+in-place ...................................................... : optional
+multiple transforms supported ................................. : yes, with "distance".
+variants ...................................................... : ILP vs LP
+memory allocation and alignment ............................... : unconstrained
+multi-threaded ................................................ : optional
+constants ..................................................... : arbitrary constant for forward and backward transforms.
+number-of-elements ............................................ : n >= 1
+
+=============== FFTW
+
+name .......................................................... : FFTW
+long name ..................................................... : Fastest Fourier Transform in the West
+license ....................................................... : (1) GPL (2) Commercial (negotiable)
+source code ................................................... : available as per GPL
+
+planner effort ................................................ : ESTIMATE, MEASURE, PATIENT, EXHAUSTIVE, WISDOM_ONLY
+overwrite-input ............................................... : optional
+planner needs pointers? ....................................... : yes
+planner overwrites input / output? ............................ : yes (except ESTIMATE)
+planner may assumed unaligned access .......................... : optional
+execution may destroy input (out-of-place transform) .......... : optional (may be specified, but there are exceptions).
+precision ..................................................... : float, double
+real/complex .................................................. : R<->C and C<->C supported
+dimensionality ................................................ : generic n-dimensional, with "stride".
+memory layout ................................................. : several options (complicated)
+in-place ...................................................... : optional
+multiple transforms supported ................................. : yes, with "distance".
+variants ...................................................... :
+memory allocation and alignment ............................... : unconstrained
+multi-threaded ................................................ : optional
+constants ..................................................... : arbitrary constant for forward and backward transforms.
+number-of-elements ............................................ : n >= 0
+
