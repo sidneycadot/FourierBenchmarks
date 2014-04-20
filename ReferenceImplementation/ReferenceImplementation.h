@@ -6,6 +6,59 @@
 #ifndef ReferenceImplementation_h
 #define ReferenceImplementation_h
 
+// SUMMARY
+// -------
+//
+// This code implements an arbitrary-precision FFT.
+//
+// AUTHOR
+// ------
+//
+// Sidney Cadot <sidney@jigsaw.nl>
+//
+// REMARKS
+// -------
+//
+// The FFT implemented has the following properties:
+//
+//  - both "forward" and "inverse" transforms
+//  - 1D complex input, 1D complex output
+//  - in-place (output overwrites input).
+//  - number of points n can be any integer (not restricted to powers of 2).
+//  - arbitrary precision (using MPC / MPFR / GMP).
+//
+// This FFT code is optimized for accuracy, not performance:
+//
+// - For all n, the algorithm is O(n log n), so this is indeed a "Fast" FFT.
+//   However, it is still pretty slow for an FFT.
+//
+// - The FFT is actually calculated using the Chirp Z-transform (CZT).
+//
+// - The CZT makes it possible to express any n-point FFT in terms of 3 larger
+//   FFTs (2 forward, 1 inverse). The nice thing is that the larger FFTs can
+//   be chosen to be of a power-of-2 size, making it possible to use a
+//   straightforward Cooley-Tukey implementation.
+//
+// So, our code consists of 3 functions: a "power-of-2" FFT, the CZT transform,
+// and a generic FFT routine that expresses a generic n-point FFT as a CZT
+// transform.
+//
+// The idea to use the CZT transform to support arbitrary numbers of points was
+// found on StackExchange; see (1), first answer.
+//
+// That answer refers to publications describing the CZT: (2) and (3).
+//
+// In order to implement the CZT, I consulted both the Octave implementation (4) as well
+// as the Matlab implementation. They are nearly identical.
+//
+// REFERENCES
+// ----------
+//
+// (1) http://math.stackexchange.com/questions/77118/non-power-of-2-ffts
+// (2) http://www.alcatel-lucent.com/bstj/vol48-1969/articles/bstj48-5-1249.pdf
+// (3) http://dx.doi.org/10.1109/TAU.1969.1162034
+// (4) http://sourceforge.net/p/octave/signal/ci/default/tree/inst/czt.m
+
 #include <mpc.h>
 
 const mpfr_rnd_t DEFAULT_MPFR_ROUNDINGMODE = MPFR_RNDN;

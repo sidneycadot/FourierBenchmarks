@@ -1,3 +1,8 @@
 
-Our Reference Implementation uses MPC to be able to calculate an arbitrary-precision
-Fourier Transform.
+Reference Implementation of the FFT
+===================================
+
+The code in this directory is our reference FFT implementation, which
+support arbitrary-precision FFT calculations.
+
+See ReferenceImplementation.h for details.
