@@ -62,12 +62,12 @@ def czt(x, m = None, w = None, a = None):
     n = len(x)
 
     if m is None: m = n
-    if w is None: w = np.exp(-2j * np.pi / (2 * m))
+    if w is None: w = np.exp(-2j * np.pi / m)
     if a is None: a = 1
 
-    wExponents1 =   np.arange(    0   , n) ** 2
-    wExponents2 = - np.arange(-(n - 1), m) ** 2
-    wExponents3 =   np.arange(    0   , m) ** 2
+    wExponents1 =   np.arange(    0   , n) ** 2 / 2.0    # n elements         [ 0 .. (n - 1) ]
+    wExponents2 = - np.arange(-(n - 1), m) ** 2 / 2.0    # m + n - 1 elements [ -(n - 1) .. +(m - 1) ]
+    wExponents3 =   np.arange(    0   , m) ** 2 / 2.0    # m elements         [ 0        ..  (m - 1) ]
 
     xx = x * a ** -np.arange(n) * w ** wExponents1
 
@@ -79,9 +79,11 @@ def czt(x, m = None, w = None, a = None):
 
     fxx = np.fft.fft(xx, nfft)
 
-    fw = np.fft.fft(w ** wExponents2, nfft)
+    ww = w ** wExponents2
 
-    fyy = fxx * fw
+    fww = np.fft.fft(ww, nfft)
+
+    fyy = fxx * fww
 
     yy = np.fft.ifft(fyy, nfft)
 
@@ -93,9 +95,9 @@ def czt(x, m = None, w = None, a = None):
 
     return y
 
-NUM_POINTS = 19109
+NUM_POINTS = 3
 
-x = np.log(123.0 + np.arange(NUM_POINTS)) + np.log(321.0 + np.arange(NUM_POINTS)) * 1j
+x = (10.0 + np.arange(NUM_POINTS)) + (20.0 + np.arange(NUM_POINTS) ** 2) * 1j
 
 t1 = time.time()
 numpy_fft_result = np.fft.fft(x)
@@ -108,7 +110,7 @@ czt_result = czt(x)
 t2 = time.time()
 czt_time = (t2 - t1)
 
-err_czt = czt(x) - np.fft.fft(x)
+err_czt = czt_result - np.fft.fft(x)
 err_czt = sum(err_czt.conj() * err_czt)
 
 print "czt_time", czt_time
