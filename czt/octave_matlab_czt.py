@@ -3,89 +3,7 @@
 import numpy as np
 import time
 
-def nextpow2(n):
-    n -= 1
-    p = 0
-    while n > 0:
-        n //= 2
-        p += 1
-    return p
-
-def matlab_czt(x, k = None, w = None, a = None):
-
-    #CZT  Chirp z-transform.
-    #   G = CZT(X, M, W, A) is the M-element z-transform of sequence X,
-    #   where M, W and A are scalars which specify the contour in the z-plane
-    #   on which the z-transform is computed.  M is the length of the transform,
-    #   W is the complex ratio between points on the contour, and A is the
-    #   complex starting point.  More explicitly, the contour in the z-plane
-    #   (a spiral or "chirp" contour) is described by
-    #       z = A * W.^(-(0:M-1))
-
-    #   The parameters M, W, and A are optional; their default values are
-    #   M = length(X), W = exp(-1i*2*pi/M), and A = 1.  These defaults
-    #   cause CZT to return the z-transform of X at equally spaced points
-    #   around the unit circle, equivalent to FFT(X).
-
-    #   If X is a matrix, the chirp z-transform operation is applied to each
-    #   column.
-
-    #   See also FFT, FREQZ.
-
-    #   Author(s): C. Denham, 1990.
-    #          J. McClellan, 7-25-90, revised
-    #          C. Denham, 8-15-90, revised
-    #          T. Krauss, 2-16-93, updated help
-    #   Copyright 1988-2010 The MathWorks, Inc.
-    #       $Revision: 1.7.4.3 $  $Date: 2010/12/06 00:01:36 $
-
-    #   References:
-    #     [1] Oppenheim, A.V. & R.W. Schafer, Discrete-Time Signal
-    #         Processing,  Prentice-Hall, pp. 623-628, 1989.
-    #     [2] Rabiner, L.R. and B. Gold, Theory and Application of
-    #         Digital Signal Processing, Prentice-Hall, Englewood
-    #         Cliffs, New Jersey, pp. 393-399, 1975.
-
-    m = len(x)
-
-    if k is None:
-        k = len(x)
-
-    if w is None:
-        w = np.exp(-2j * np.pi / k)
-
-    if a is None:
-        a = 1
-
-    # ------- Length for power-of-two fft.
-
-    nfft = 2 ** nextpow2(m + k - 1)
-
-    # ------- Premultiply data.
-
-    kk = np.arange(1 - m, max(k, m))
-
-    ww = w ** ((kk ** 2) / 2.0)                 # <----- Chirp filter is 1/ww
-
-    y = x * a ** -np.arange(m) * ww[m - 1 : 2 * m - 1]
-
-    # ------- Fast convolution via FFT.
-
-    fy = np.fft.fft(y, nfft)
-
-    fv = np.fft.fft(ww[0 : k + m - 1].conj(), nfft)   # <----- Chirp filter.
-
-    fy = fy * fv
-
-    g  = np.fft.ifft(fy)
-
-    # ------- Final multiply.
-
-    g = g[m - 1 : m + k - 1] * ww[m - 1 : m + k - 1]
-
-    return g
-
-def octave_czt(x, m = None, w = None, a = None):
+def czt(x, m = None, w = None, a = None):
 
     # Copyright (C) 2004 Daniel Gunyan
     #
@@ -141,32 +59,41 @@ def octave_czt(x, m = None, w = None, a = None):
     #     ifft(fft(g)*fft(1/chirp))
     #   multiply gg by M-elements of chirp and call it done
 
-    if m is None:
-        m = len(x)
-
-    if w is None:
-        w = np.exp(-2j * np.pi / m)
-
-    if a is None:
-        a = 1
-
     n = len(x)
 
-    nfft = 2 ** nextpow2(n + m - 1) # fft pad
+    if m is None: m = n
+    if w is None: w = np.exp(-2j * np.pi / (2 * m))
+    if a is None: a = 1
 
-    W2 = w ** ((np.arange(-(n - 1), max(m, n)) ** 2) / 2.0) # chirp
+    wExponents1 =   np.arange(    0   , n) ** 2
+    wExponents2 = - np.arange(-(n - 1), m) ** 2
+    wExponents3 =   np.arange(    0   , m) ** 2
 
-    fg = np.fft.fft(x * (a ** -np.arange(n)) * W2[n - 1 : 2 * n - 1], nfft)
+    xx = x * a ** -np.arange(n) * w ** wExponents1
 
-    fw = np.fft.fft(W2[0 : m + n - 1].conj(), nfft)
+    # Determine next-biggest FFT of power-of-two
 
-    gg = np.fft.ifft(fg * fw, nfft)
+    nfft = 1
+    while nfft < (m + n - 1):
+        nfft += nfft
 
-    y = gg[n - 1 : m + n - 1] * W2[n - 1 : m + n - 1]
+    fxx = np.fft.fft(xx, nfft)
+
+    fw = np.fft.fft(w ** wExponents2, nfft)
+
+    fyy = fxx * fw
+
+    yy = np.fft.ifft(fyy, nfft)
+
+    # select output
+
+    yy = yy[n - 1 : m + n - 1]
+
+    y = yy * w ** wExponents3
 
     return y
 
-NUM_POINTS = 999983
+NUM_POINTS = 19109
 
 x = np.log(123.0 + np.arange(NUM_POINTS)) + np.log(321.0 + np.arange(NUM_POINTS)) * 1j
 
@@ -177,23 +104,12 @@ numpy_fft_time = (t2 - t1)
 print "numpy_fft_time", numpy_fft_time
 
 t1 = time.time()
-matlab_czt_result = matlab_czt(x)
+czt_result = czt(x)
 t2 = time.time()
-matlab_czt_time = (t2 - t1)
+czt_time = (t2 - t1)
 
-err_matlab_czt = matlab_czt(x) - np.fft.fft(x)
-err_matlab_czt = sum(err_matlab_czt.conj() * err_matlab_czt)
+err_czt = czt(x) - np.fft.fft(x)
+err_czt = sum(err_czt.conj() * err_czt)
 
-print "matlab_czt_time", matlab_czt_time
-print "matlab_czt_error", abs(err_matlab_czt)
-
-t1 = time.time()
-octave_czt_result = matlab_czt(x)
-t2 = time.time()
-octave_czt_time = (t2 - t1)
-
-err_octave_czt = octave_czt(x) - np.fft.fft(x)
-err_octave_czt = sum(err_octave_czt.conj() * err_octave_czt)
-
-print "octave_czt_time", octave_czt_time
-print "octave_czt_error", abs(err_octave_czt)
+print "czt_time", czt_time
+print "czt_error", abs(err_czt)
