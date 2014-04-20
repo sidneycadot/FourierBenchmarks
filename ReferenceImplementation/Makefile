@@ -6,10 +6,15 @@ CC = $(CXX)
 
 LDLIBS = -lmpc
 
-TestReferenceImplementation : TestReferenceImplementation.o ReferenceImplementation.o
+TARGET = Test_FastFourierTransform_ReferenceImplementation
 
-TestReferenceImplementation.o : TestReferenceImplementation.cc ReferenceImplementation.h
-ReferenceImplementation.o     : ReferenceImplementation.cc ReferenceImplementation.h
+OBJS = Test_FastFourierTransform_ReferenceImplementation.o FastFourierTransform_ReferenceImplementation.o
+
+$(TARGET) : $(OBJS)
+
+Test_FastFourierTransform_ReferenceImplementation.o : Test_FastFourierTransform_ReferenceImplementation.cc FastFourierTransform_ReferenceImplementation.h
+
+FastFourierTransform_ReferenceImplementation.o : FastFourierTransform_ReferenceImplementation.cc FastFourierTransform_ReferenceImplementation.h
 
 clean :
-	$(RM) TestReferenceImplementation
+	$(RM) $(TARGET) $(OBJS)

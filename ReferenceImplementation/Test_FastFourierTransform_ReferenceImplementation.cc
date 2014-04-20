@@ -1,15 +1,12 @@
 
-////////////////////////////////////
-// TestReferenceImplementation.cc //
-////////////////////////////////////
+//////////////////////////////////////////////////////////
+// Test_FastFourierTransform_ReferenceImplementation.cc //
+//////////////////////////////////////////////////////////
 
 #include <iostream>
 #include <mpc.h>
 
-#include <iostream>
-using namespace std;
-
-#include "ReferenceImplementation.h"
+#include "FastFourierTransform_ReferenceImplementation.h"
 
 using namespace std;
 
@@ -31,7 +28,7 @@ int main()
         mpc_set_ui_ui(z[i], 10 + i, 20 + i * i, DEFAULT_MPC_ROUNDINGMODE);
     }
 
-    generic_fft(FourierTransformDirection::Inverse, z, NUM_POINTS, precision);
+    generic_fft(FourierTransformDirection::Forward, z, NUM_POINTS, precision);
 
     if (print)
     {

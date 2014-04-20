@@ -1,10 +1,10 @@
 
-///////////////////////////////
-// ReferenceImplementation.h //
-///////////////////////////////
+////////////////////////////////////////////////////
+// FastFourierTransform_ReferenceImplementation.h //
+////////////////////////////////////////////////////
 
-#ifndef ReferenceImplementation_h
-#define ReferenceImplementation_h
+#ifndef FastFourierTransform_ReferenceImplementation_h
+#define FastFourierTransform_ReferenceImplementation_h
 
 // SUMMARY
 // -------
@@ -76,4 +76,4 @@ void czt(const mpc_t * x, unsigned n, mpc_t * y, unsigned m, const mpc_t & w, co
 
 void generic_fft(const FourierTransformDirection direction, mpc_t * z, const unsigned n, const mpfr_prec_t precision);
 
-#endif // ReferenceImplementation_h
+#endif // FastFourierTransform_ReferenceImplementation_h
