@@ -57,8 +57,8 @@ void recursive_inverse_fft(std::complex<real_type> * z, const unsigned n, const 
 
     assert (n % 2 == 0);
 
-    recursive_fft(z         , n / 2, 2 * stride);
-    recursive_fft(z + stride, n / 2, 2 * stride);
+    recursive_inverse_fft(z         , n / 2, 2 * stride);
+    recursive_inverse_fft(z + stride, n / 2, 2 * stride);
 
     // Now, we need to combine the values of the sub-FFTs
 
