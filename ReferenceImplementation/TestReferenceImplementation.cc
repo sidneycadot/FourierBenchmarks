@@ -6,6 +6,9 @@
 #include <iostream>
 #include <mpc.h>
 
+#include <iostream>
+using namespace std;
+
 #include "ReferenceImplementation.h"
 
 using namespace std;
@@ -14,11 +17,11 @@ int main()
 {
     mpfr_prec_t precision = 1024;
 
-    unsigned NUM_POINTS = 16;
+    unsigned NUM_POINTS = 3;
 
     bool print = true;
 
-    size_t print_precision = 0;
+    size_t print_precision = 40;
 
     mpc_t * z = new mpc_t[NUM_POINTS];
 
@@ -28,8 +31,7 @@ int main()
         mpc_set_ui_ui(z[i], 10 + i, 20 + i * i, DEFAULT_MPC_ROUNDINGMODE);
     }
 
-    pow2_recursive_fft<FourierTransformDirection::Forward>(z, NUM_POINTS, 1, precision);
-    pow2_recursive_fft<FourierTransformDirection::Inverse>(z, NUM_POINTS, 1, precision);
+    generic_fft(FourierTransformDirection::Inverse, z, NUM_POINTS, precision);
 
     if (print)
     {
