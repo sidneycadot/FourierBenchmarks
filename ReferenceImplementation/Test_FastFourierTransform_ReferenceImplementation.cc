@@ -37,7 +37,7 @@ int main()
 
     const unsigned NUM_REPEATS = 10;
 
-    const unsigned TIME_LIMIT_US = 1000000; // 1 second
+    const unsigned TIME_LIMIT_US = 5000000; // 5 seconds max. for all repeats.
 
     // Prepare random number generator of GMP
 
@@ -54,13 +54,15 @@ int main()
         mpc_t  diff;
         mpfr_t err;
         mpfr_t max_err;
+        mpfr_t rms_err;
 
         mpfr_init2(rnd_re, precision);
         mpfr_init2(rnd_im, precision);
 
-        mpc_init2 (diff   , precision + 1024); // give extra precision to the numbers used to calculate the error.
-        mpfr_init2(err    , precision + 1024);
-        mpfr_init2(max_err, precision + 1024);
+        mpc_init2 (diff    , precision + 1024); // give extra precision to the numbers used to calculate the error.
+        mpfr_init2(err     , precision + 1024);
+        mpfr_init2(max_err , precision + 1024);
+        mpfr_init2(rms_err , precision + 1024);
 
         for (unsigned num_points = 1;; ++num_points)
         {
@@ -73,7 +75,7 @@ int main()
                 mpc_init2(y[i], precision);
             }
 
-            unsigned timeLimitExceeded = 0;
+            unsigned total_duration = 0;
 
             for (unsigned repeat = 1; repeat <= NUM_REPEATS; ++repeat)
             {
@@ -138,40 +140,53 @@ int main()
                     duration_inverse = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
                 }
 
-                // (6) Calculate error = max(abs(y[i] - x[i]).
+                // (6) Calculate max_err = max(abs(y[i] - x[i]).
+                //           and rms_err = sqrt(mean(norm(y[i] - x[i])))
 
                 mpfr_set_ui(max_err, 0, DEFAULT_MPFR_ROUNDINGMODE);
+                mpfr_set_ui(rms_err, 0, DEFAULT_MPFR_ROUNDINGMODE);
 
                 for (unsigned i = 0; i < num_points; ++i)
                 {
                     mpc_sub(diff, y[i], x[i], DEFAULT_MPC_ROUNDINGMODE);
                     mpc_abs(err, diff, DEFAULT_MPFR_ROUNDINGMODE);
                     mpfr_max(max_err, max_err, err, DEFAULT_MPFR_ROUNDINGMODE);
+
+                    mpc_norm(err, diff, DEFAULT_MPFR_ROUNDINGMODE);
+                    mpfr_add(rms_err, rms_err, err, DEFAULT_MPFR_ROUNDINGMODE);
                 }
+
+                mpfr_div_ui(rms_err, rms_err, num_points, DEFAULT_MPFR_ROUNDINGMODE);
+                mpfr_sqrt(rms_err, rms_err, DEFAULT_MPFR_ROUNDINGMODE);
 
                 // (7) Present result for this trial.
 
                 {
-                    char * max_err_str;
-                    int result = mpfr_asprintf(&max_err_str, "%.20Re", max_err);
-                    assert(result > 0);
+                    int mpfr_asprintf_result;
 
-                    cout << "precision "    << setw(10) << precision
-                        << "    num_points" << setw(10) << num_points
-                        << "    repeat"     << setw(10) << repeat
-                        << "    forward"    << setw(16) << duration_forward << " [us]"
-                        << "    inverse"    << setw(16) << duration_inverse << " [us]"
-                        << "    max_error " << max_err_str << endl;
+                    char * max_err_str;
+                    mpfr_asprintf_result = mpfr_asprintf(&max_err_str, "%.20Re", max_err);
+                    assert(mpfr_asprintf_result > 0);
+
+                    char * rms_err_str;
+                    mpfr_asprintf_result = mpfr_asprintf(&rms_err_str, "%.20Re", rms_err);
+                    assert(mpfr_asprintf_result > 0);
+
+                    cout << "precision "     << setw(10) << precision
+                        << "    num_points"  << setw(10) << num_points
+                        << "    repeat"      << setw(10) << repeat
+                        << "    forward"     << setw(16) << duration_forward << " [us]"
+                        << "    inverse"     << setw(16) << duration_inverse << " [us]"
+                        << "    rms_error "  << rms_err_str
+                        << "    max_error "  << max_err_str  << endl;
 
                     mpfr_free_str(max_err_str);
+                    mpfr_free_str(rms_err_str);
                 }
 
                 // Trial done. Note if TIME_LIMIT_US was exceeded.
 
-                if ((duration_forward + duration_inverse) >= TIME_LIMIT_US)
-                {
-                    ++timeLimitExceeded;
-                }
+                total_duration += (duration_forward + duration_inverse);
 
             } // repeat loop
 
@@ -184,7 +199,7 @@ int main()
             delete [] y;
             delete [] x;
 
-            if (timeLimitExceeded == NUM_REPEATS)
+            if (total_duration > TIME_LIMIT_US)
             {
                 break;
             }
@@ -193,6 +208,7 @@ int main()
 
         mpfr_clear(rnd_re);
         mpfr_clear(rnd_im);
+        mpfr_clear(rms_err);
         mpfr_clear(max_err);
         mpfr_clear(err);
         mpc_clear(diff);
