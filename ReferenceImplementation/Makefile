@@ -4,7 +4,7 @@ CC = $(CXX)
 
 .PHONY : clean
 
-LDLIBS = -lmpc
+LDLIBS = -lmpc -lmpfr
 
 TARGET = Test_FastFourierTransform_ReferenceImplementation
 
