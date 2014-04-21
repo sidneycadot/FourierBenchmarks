@@ -24,6 +24,7 @@
 //  - both "forward" and "inverse" transforms
 //  - 1D complex input, 1D complex output
 //  - in-place (output overwrites input).
+//  - stride may be specified.
 //  - number of points n can be any integer (not restricted to powers of 2).
 //  - arbitrary precision (using MPC / MPFR / GMP).
 //
@@ -51,6 +52,8 @@
 // In order to implement the CZT, I consulted both the Octave implementation (4) as well
 // as the Matlab implementation. They are nearly identical.
 //
+// Wikipedia has a nice article on the Chirp Z-tranform as well (5).
+//
 // REFERENCES
 // ----------
 //
@@ -58,6 +61,7 @@
 // (2) http://www.alcatel-lucent.com/bstj/vol48-1969/articles/bstj48-5-1249.pdf
 // (3) http://dx.doi.org/10.1109/TAU.1969.1162034
 // (4) http://sourceforge.net/p/octave/signal/ci/default/tree/inst/czt.m
+// (5) http://en.wikipedia.org/wiki/Bluestein's_FFT_algorithm
 
 #include <mpc.h>
 
@@ -72,8 +76,8 @@ enum class FourierTransformDirection
 
 void pow2_fft(const FourierTransformDirection direction, mpc_t * z, const unsigned n, const unsigned stride, const mpfr_prec_t precision);
 
-void czt(const mpc_t * x, unsigned n, mpc_t * y, unsigned m, const mpc_t & w, const mpc_t & a, const mpfr_prec_t precision);
+void czt(const mpc_t * x, const unsigned n, const unsigned x_stride, mpc_t * y, const unsigned m, const mpc_t & w, const mpc_t & a, const mpfr_prec_t precision);
 
-void generic_fft(const FourierTransformDirection direction, mpc_t * z, const unsigned n, const mpfr_prec_t precision);
+void generic_fft(const FourierTransformDirection direction, mpc_t * z, const unsigned n, const unsigned stride, const mpfr_prec_t precision);
 
 #endif // FastFourierTransform_ReferenceImplementation_h

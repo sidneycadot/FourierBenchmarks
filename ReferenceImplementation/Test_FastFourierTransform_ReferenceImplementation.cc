@@ -6,17 +6,22 @@
 #include <iostream>
 #include <iomanip>
 #include <chrono>
+#include <cassert>
+#include <cstdlib>
 #include <mpc.h>
 
 #include "FastFourierTransform_ReferenceImplementation.h"
 
-using namespace std;
-
-bool is_power_of_two(unsigned n)
+static bool is_power_of_two(unsigned n)
 {
-    while (n != 0 && n % 2 == 0)
+    if (n == 0)
     {
-        n >>= 1;
+        return false;
+    }
+
+    while (n % 2 == 0)
+    {
+        n /= 2;
     }
 
     return (n == 1);
@@ -24,59 +29,181 @@ bool is_power_of_two(unsigned n)
 
 int main()
 {
+    using namespace std;
+
     bool print = false;
 
     size_t print_precision = 40;
 
+    const unsigned NUM_REPEATS = 10;
+
+    const unsigned TIME_LIMIT_US = 1000000; // 1 second
+
+    // Prepare random number generator of GMP
+
+    gmp_randstate_t rnd_state;
+    gmp_randinit_default(rnd_state);
+
+    // Outer trial loop.
+
     for (mpfr_prec_t precision = 16; precision <= 1048576; precision = is_power_of_two(precision) ? (precision * 3 / 2) : (precision * 4 / 3))
     {
-        for (unsigned NUM_POINTS = 1;; ++NUM_POINTS)
+        mpfr_t rnd_re;
+        mpfr_t rnd_im;
+
+        mpc_t  diff;
+        mpfr_t err;
+        mpfr_t max_err;
+
+        mpfr_init2(rnd_re, precision);
+        mpfr_init2(rnd_im, precision);
+
+        mpc_init2 (diff   , precision + 1024); // give extra precision to the numbers used to calculate the error.
+        mpfr_init2(err    , precision + 1024);
+        mpfr_init2(max_err, precision + 1024);
+
+        for (unsigned num_points = 1;; ++num_points)
         {
-            mpc_t * z = new mpc_t[NUM_POINTS];
+            mpc_t * x = new mpc_t[num_points];
+            mpc_t * y = new mpc_t[num_points];
 
-            for (unsigned i = 0; i < NUM_POINTS; ++i)
+            for (unsigned i = 0; i < num_points; ++i)
             {
-                mpc_init2(z[i], precision);
-                mpc_set_ui_ui(z[i], 10 + i, 20 + i * i, DEFAULT_MPC_ROUNDINGMODE);
+                mpc_init2(x[i], precision);
+                mpc_init2(y[i], precision);
             }
 
-            std::chrono::time_point<std::chrono::high_resolution_clock> t1 = std::chrono::high_resolution_clock::now();
+            unsigned timeLimitExceeded = 0;
 
-            generic_fft(FourierTransformDirection::Forward, z, NUM_POINTS, precision);
-
-            std::chrono::time_point<std::chrono::high_resolution_clock> t2 = std::chrono::high_resolution_clock::now();
-
-            unsigned duration_us = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
-
-            cout << setw(10) << precision << setw(10) << NUM_POINTS << " " << setw(20) << duration_us << " us" << endl;
-
-            if (print)
+            for (unsigned repeat = 1; repeat <= NUM_REPEATS; ++repeat)
             {
-                for (unsigned i = 0; i < NUM_POINTS; ++i)
+                // Prepare a single trial.
+
+                // (1) Fill x[] array with gaussian noise.
+
+                for (unsigned i = 0; i < num_points; ++i)
                 {
-                    char * z_str = mpc_get_str(10, print_precision, z[i], DEFAULT_MPC_ROUNDINGMODE);
+                    mpfr_grandom(rnd_re, rnd_im, rnd_state, DEFAULT_MPFR_ROUNDINGMODE);
 
-                    cout << "z[" << i << "] = " << z_str << endl;
-
-                    mpc_free_str(z_str);
+                    mpc_set_fr_fr(x[i], rnd_re, rnd_im, DEFAULT_MPC_ROUNDINGMODE);
                 }
-            }
 
-            for (unsigned i = 0; i < NUM_POINTS; ++i)
+                // (2) Copy x to y.
+                //     We do this because our FFT is in-place, and we need the original data to determine our error.
+
+                for (unsigned i = 0; i < num_points; ++i)
+                {
+                    mpc_set(y[i], x[i], DEFAULT_MPC_ROUNDINGMODE);
+                }
+
+                // (3) Execute forward FFT of y[].
+
+                unsigned duration_forward;
+
+                {
+                    std::chrono::time_point<std::chrono::high_resolution_clock> t1 = std::chrono::high_resolution_clock::now();
+
+                    generic_fft(FourierTransformDirection::Forward, y, num_points, 1, precision);
+
+                    std::chrono::time_point<std::chrono::high_resolution_clock> t2 = std::chrono::high_resolution_clock::now();
+
+                    duration_forward = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
+                }
+
+                // (4) Optional print of y[] after FFT.
+
+                if (print)
+                {
+                    for (unsigned i = 0; i < num_points; ++i)
+                    {
+                        char * y_str = mpc_get_str(10, print_precision, y[i], DEFAULT_MPC_ROUNDINGMODE);
+
+                        cout << "y[" << i << "] = " << y_str << endl;
+
+                        mpc_free_str(y_str);
+                    }
+                }
+
+                // (5) Execute inverse FFT of y[].
+
+                unsigned duration_inverse;
+
+                {
+                    std::chrono::time_point<std::chrono::high_resolution_clock> t1 = std::chrono::high_resolution_clock::now();
+
+                    generic_fft(FourierTransformDirection::Inverse, y, num_points, 1, precision);
+
+                    std::chrono::time_point<std::chrono::high_resolution_clock> t2 = std::chrono::high_resolution_clock::now();
+
+                    duration_inverse = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
+                }
+
+                // (6) Calculate error = max(abs(y[i] - x[i]).
+
+                mpfr_set_ui(max_err, 0, DEFAULT_MPFR_ROUNDINGMODE);
+
+                for (unsigned i = 0; i < num_points; ++i)
+                {
+                    mpc_sub(diff, y[i], x[i], DEFAULT_MPC_ROUNDINGMODE);
+                    mpc_abs(err, diff, DEFAULT_MPFR_ROUNDINGMODE);
+                    mpfr_max(max_err, max_err, err, DEFAULT_MPFR_ROUNDINGMODE);
+                }
+
+                // (7) Present result for this trial.
+
+                {
+                    char * max_err_str;
+                    int result = mpfr_asprintf(&max_err_str, "%.20Re", max_err);
+                    assert(result > 0);
+
+                    cout << "precision "    << setw(10) << precision
+                        << "    num_points" << setw(10) << num_points
+                        << "    repeat"     << setw(10) << repeat
+                        << "    forward"    << setw(16) << duration_forward << " [us]"
+                        << "    inverse"    << setw(16) << duration_inverse << " [us]"
+                        << "    max_error " << max_err_str << endl;
+
+                    mpfr_free_str(max_err_str);
+                }
+
+                // Trial done. Note if TIME_LIMIT_US was exceeded.
+
+                if ((duration_forward + duration_inverse) >= TIME_LIMIT_US)
+                {
+                    ++timeLimitExceeded;
+                }
+
+            } // repeat loop
+
+            for (unsigned i = 0; i < num_points; ++i)
             {
-                mpc_clear(z[i]);
+                mpc_clear(x[i]);
+                mpc_clear(y[i]);
             }
 
-            delete [] z;
+            delete [] y;
+            delete [] x;
 
-            if (duration_us >= 1000000)
+            if (timeLimitExceeded == NUM_REPEATS)
             {
                 break;
             }
-        }
-    }
 
+        } // num_points loop
+
+        mpfr_clear(rnd_re);
+        mpfr_clear(rnd_im);
+        mpfr_clear(max_err);
+        mpfr_clear(err);
+        mpc_clear(diff);
+
+    } // precision loop
+
+    // Free cache of MPFR, used for PI.
     mpfr_free_cache();
 
-    return 0;
+    // Free the GMP random state.
+    gmp_randclear(rnd_state);
+
+    return EXIT_SUCCESS;
 }

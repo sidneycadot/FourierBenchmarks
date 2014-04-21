@@ -118,13 +118,12 @@ void pow2_fft(const FourierTransformDirection direction, mpc_t * z, const unsign
     // All done.
 }
 
-void czt(const mpc_t * x, unsigned n, mpc_t * y, unsigned m, const mpc_t & w, const mpc_t & a, const mpfr_prec_t precision)
+void czt(const mpc_t * x, const unsigned n, const unsigned x_stride, mpc_t * y, const unsigned m, const unsigned y_stride, const mpc_t & w, const mpc_t & a, const mpfr_prec_t precision)
 {
-    // Make sure we have room for (m + n - 1) entries
-    // Determine next-biggest power-of-two
+    // Determine next-biggest power-of-two that fits the (n + m - 1) entries we need.
 
     unsigned fft_size = 1;
-    while (fft_size < (m + n - 1))
+    while (fft_size < (n + m - 1))
     {
         fft_size += fft_size;
     }
@@ -132,7 +131,7 @@ void czt(const mpc_t * x, unsigned n, mpc_t * y, unsigned m, const mpc_t & w, co
     mpc_t temp;
     mpc_init2(temp, precision);
 
-    // xx = x * a ** -np.arange(n) * w ** np.arange(0, n) ** 2 (padded by zeroes)
+    // Initialize xx
 
     mpc_t * xx = new mpc_t[fft_size];
 
@@ -140,8 +139,6 @@ void czt(const mpc_t * x, unsigned n, mpc_t * y, unsigned m, const mpc_t & w, co
     {
         mpc_init2(xx[i], precision);
     }
-
-    // xx = x * a ** -np.arange(n) * w ** wExponents1
 
     for (unsigned i = 0; i < n; ++i)
     {
@@ -152,7 +149,7 @@ void czt(const mpc_t * x, unsigned n, mpc_t * y, unsigned m, const mpc_t & w, co
 
         mpc_pow(temp, w, temp, DEFAULT_MPC_ROUNDINGMODE);
 
-        mpc_mul(xx[i], x[i], temp, DEFAULT_MPC_ROUNDINGMODE); // xx[i] = x[i] 
+        mpc_mul(xx[i], x[i * x_stride], temp, DEFAULT_MPC_ROUNDINGMODE); // xx[i] = x[i]
 
         mpc_pow_ui(temp, a, i, DEFAULT_MPC_ROUNDINGMODE);
 
@@ -168,7 +165,7 @@ void czt(const mpc_t * x, unsigned n, mpc_t * y, unsigned m, const mpc_t & w, co
 
     pow2_fft(FourierTransformDirection::Forward, xx, fft_size, 1, precision);
 
-    // Allocate & initialize ww
+    // Allocate and initialize ww
 
     mpc_t * ww = new mpc_t[fft_size];
 
@@ -177,11 +174,11 @@ void czt(const mpc_t * x, unsigned n, mpc_t * y, unsigned m, const mpc_t & w, co
         mpc_init2(ww[i], precision);
     }
 
-    for (unsigned i = 0; i < m + n - 1; ++i)
+    for (unsigned i = 0; i < n + m - 1; ++i)
     {
         // ww[i] = pow(w, -(j * j) / 2)  with j = i - (n - 1)
 
-        int j = i - (n - 1);
+        signed j = i - (n - 1);
 
         mpc_set_si(temp, -(j * j), DEFAULT_MPC_ROUNDINGMODE);
         mpc_div_ui(temp, temp, 2, DEFAULT_MPC_ROUNDINGMODE);
@@ -189,7 +186,7 @@ void czt(const mpc_t * x, unsigned n, mpc_t * y, unsigned m, const mpc_t & w, co
         mpc_pow(ww[i], w, temp, DEFAULT_MPC_ROUNDINGMODE);
     }
 
-    for (unsigned i = m + n - 1; i < fft_size; ++i) // pad with zeroes
+    for (unsigned i = n + m - 1; i < fft_size; ++i) // pad with zeroes
     {
         mpc_set_ui(ww[i], 0, DEFAULT_MPC_ROUNDINGMODE);
     }
@@ -198,7 +195,7 @@ void czt(const mpc_t * x, unsigned n, mpc_t * y, unsigned m, const mpc_t & w, co
 
     pow2_fft(FourierTransformDirection::Forward, ww, fft_size, 1, precision);
 
-    // Do convolution: xx = (xx * ww), element-wise
+    // Do convolution: xx[i] = xx[i] * ww[i]
 
     for (unsigned i = 0; i < fft_size; ++i)
     {
@@ -209,17 +206,19 @@ void czt(const mpc_t * x, unsigned n, mpc_t * y, unsigned m, const mpc_t & w, co
 
     pow2_fft(FourierTransformDirection::Inverse, xx, fft_size, 1, precision);
 
-    // The last 'm' elements are the output (after multiplying)
-    // Put them in 'y'.
+    // Extract output:
+    // y[j] =  xx[j + n - 1] * pow(w, (j * j) / 2)
 
-    for (unsigned i = 0; i < m; ++i)
+    for (unsigned j = 0; j < m; ++j)
     {
-        mpc_set_ui(temp, (i * i), DEFAULT_MPC_ROUNDINGMODE);
+        unsigned i = j + (n - 1);
+
+        mpc_set_ui(temp, (j * j), DEFAULT_MPC_ROUNDINGMODE);
         mpc_div_ui(temp, temp, 2, DEFAULT_MPC_ROUNDINGMODE);
 
         mpc_pow(temp, w, temp, DEFAULT_MPC_ROUNDINGMODE);
 
-        mpc_mul(y[i], xx[i + n - 1], temp, DEFAULT_MPC_ROUNDINGMODE);
+        mpc_mul(y[j * y_stride], xx[i], temp, DEFAULT_MPC_ROUNDINGMODE);
     }
 
     // Deallocate ww, xx, and temp
@@ -241,17 +240,17 @@ void czt(const mpc_t * x, unsigned n, mpc_t * y, unsigned m, const mpc_t & w, co
     mpc_clear(temp);
 }
 
-void generic_fft(const FourierTransformDirection direction, mpc_t * z, const unsigned n, const mpfr_prec_t precision)
+void generic_fft(const FourierTransformDirection direction, mpc_t * z, const unsigned n, const unsigned stride, const mpfr_prec_t precision)
 {
-    const unsigned & m = n;
+    const unsigned & m = n; // number of desired output samples is identical to number of desired input samples.
 
-    // Init w
+    // Init w = exp(-2 * pi * I / m) [forward transform]
+    //          exp(+2 * pi * I / m) [inverse transform]
+
     mpc_t w;
     mpc_init2(w, precision);
 
     {
-        // w = np.exp(-2j * np.pi / m)
-
         mpfr_t turn;
         mpfr_t sin_turn;
         mpfr_t cos_turn;
@@ -261,16 +260,7 @@ void generic_fft(const FourierTransformDirection direction, mpc_t * z, const uns
         mpfr_init2(cos_turn, precision);
 
         mpfr_const_pi(turn, DEFAULT_MPFR_ROUNDINGMODE);
-
-        if (direction == FourierTransformDirection::Forward)
-        {
-            mpfr_mul_si(turn, turn, -2, DEFAULT_MPFR_ROUNDINGMODE);
-        }
-        else
-        {
-            mpfr_mul_si(turn, turn, +2, DEFAULT_MPFR_ROUNDINGMODE);
-        }
-
+        mpfr_mul_si(turn, turn, (direction == FourierTransformDirection::Forward) ? (-2) : (+2), DEFAULT_MPFR_ROUNDINGMODE);
         mpfr_div_ui(turn, turn, m, DEFAULT_MPFR_ROUNDINGMODE);
 
         // w = exp(turn * i)
@@ -284,7 +274,7 @@ void generic_fft(const FourierTransformDirection direction, mpc_t * z, const uns
         mpfr_clear(turn);
     }
 
-    // Init a
+    // Initialize a == 1
 
     mpc_t a;
     mpc_init2(a, precision);
@@ -293,7 +283,7 @@ void generic_fft(const FourierTransformDirection direction, mpc_t * z, const uns
 
     // Do FFT as CZT
 
-    czt(z, n, z, m, w, a, precision);
+    czt(z, n, stride, z, m, stride, w, a, precision);
 
     if (direction == FourierTransformDirection::Inverse)
     {
@@ -303,7 +293,7 @@ void generic_fft(const FourierTransformDirection direction, mpc_t * z, const uns
         }
     }
 
-    // Remove old stuff
+    // Deallocate a and w
 
     mpc_clear(a);
     mpc_clear(w);
