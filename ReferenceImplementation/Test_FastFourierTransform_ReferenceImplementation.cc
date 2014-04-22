@@ -30,7 +30,7 @@ static bool is_power_of_two(unsigned n)
 // We assume a 64-bit unsigned long type, for the gmp_randseed_ui() call.
 static_assert(sizeof(unsigned long) == 8, "unsigned long is too small.");
 
-int main()
+int main(int argc, char ** argv)
 {
     using namespace std;
 
@@ -40,7 +40,14 @@ int main()
 
     const unsigned NUM_REPEATS = 10;
 
-    const unsigned TIME_LIMIT_REPEATS_US = 20000000; // 20 seconds max. for all repeats.
+    unsigned time_limit_ms = 10; // If any transform in the 'repeat' loop is less than this time, we proceed to the next 'num_points'.
+
+    if (argc == 2)
+    {
+        sscanf(argv[1], "%u", &time_limit_ms);
+    }
+
+    unsigned TIME_LIMIT_US = time_limit_ms * 1000; // go from milliseconds to microseconds
 
     // Prepare random number generator of GMP.
 
@@ -78,7 +85,7 @@ int main()
                 mpc_init2(y[i], precision);
             }
 
-            unsigned total_duration = 0;
+            unsigned shortest_duration = TIME_LIMIT_US;
 
             // Initialize the seed depending on precision and num_points, to ensure reproducible runs.
 
@@ -119,6 +126,8 @@ int main()
                     duration_forward = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
                 }
 
+                shortest_duration = std::min(shortest_duration, duration_forward);
+
                 // (4) Optional print of y[] after FFT.
 
                 if (print)
@@ -146,6 +155,8 @@ int main()
 
                     duration_inverse = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
                 }
+
+                shortest_duration = std::min(shortest_duration, duration_inverse);
 
                 // (6) Calculate max_err = max(abs(y[i] - x[i]).
                 //           and rms_err = sqrt(mean(norm(y[i] - x[i])))
@@ -191,9 +202,7 @@ int main()
                     mpfr_free_str(rms_err_str);
                 }
 
-                // Trial done. Note the time taken.
-
-                total_duration += (duration_forward + duration_inverse);
+                // Trial done.
 
             } // repeat loop
 
@@ -206,10 +215,12 @@ int main()
             delete [] y;
             delete [] x;
 
-            // If the total time for the repeats exceeds 'TIME_LIMIT_REPEATS_US',
-            // we are done with this precision; we will start with the next one.
+            // If the best (shortest) transform was below TIME_LIMIT_MS,
+            // we proceed to the next 'num_points' loop. Otherwise,
+            // we are done for this precision, and we will proceed to the next
+            // precision.
 
-            if (total_duration > TIME_LIMIT_REPEATS_US)
+            if (shortest_duration >= TIME_LIMIT_US)
             {
                 break;
             }
