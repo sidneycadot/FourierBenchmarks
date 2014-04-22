@@ -29,6 +29,8 @@ static bool is_power_of_two(unsigned n)
 
 int main()
 {
+    assert(sizeof(unsigned long) == 8);
+
     using namespace std;
 
     bool print = false;
@@ -37,9 +39,9 @@ int main()
 
     const unsigned NUM_REPEATS = 10;
 
-    const unsigned TIME_LIMIT_US = 5000000; // 5 seconds max. for all repeats.
+    const unsigned TIME_LIMIT_US = 10000000; // 10 seconds max. for all repeats.
 
-    // Prepare random number generator of GMP
+    // Prepare random number generator of GMP.
 
     gmp_randstate_t rnd_state;
     gmp_randinit_default(rnd_state);
@@ -76,6 +78,10 @@ int main()
             }
 
             unsigned total_duration = 0;
+
+	    // Initialize the seed depending on precision and num_points, to ensure reproducible runs.
+
+	    gmp_randseed_ui(rnd_state, precision * 0x100000000UL + num_points);
 
             for (unsigned repeat = 1; repeat <= NUM_REPEATS; ++repeat)
             {
