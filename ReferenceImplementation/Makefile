@@ -4,6 +4,7 @@ CC = $(CXX)
 
 .PHONY : clean
 
+LDFLAGS = --static
 LDLIBS = -lmpc -lmpfr -lgmp
 
 TARGET = Test_FastFourierTransform_ReferenceImplementation
