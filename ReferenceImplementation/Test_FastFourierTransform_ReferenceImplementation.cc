@@ -27,10 +27,11 @@ static bool is_power_of_two(unsigned n)
     return (n == 1);
 }
 
+// We assume a 64-bit unsigned long type, for the gmp_randseed_ui() call.
+static_assert(sizeof(unsigned long) == 8, "unsigned long is too small.");
+
 int main()
 {
-    assert(sizeof(unsigned long) == 8);
-
     using namespace std;
 
     bool print = false;
@@ -39,7 +40,7 @@ int main()
 
     const unsigned NUM_REPEATS = 10;
 
-    const unsigned TIME_LIMIT_US = 10000000; // 10 seconds max. for all repeats.
+    const unsigned TIME_LIMIT_REPEATS_US = 20000000; // 20 seconds max. for all repeats.
 
     // Prepare random number generator of GMP.
 
@@ -79,9 +80,9 @@ int main()
 
             unsigned total_duration = 0;
 
-	    // Initialize the seed depending on precision and num_points, to ensure reproducible runs.
+            // Initialize the seed depending on precision and num_points, to ensure reproducible runs.
 
-	    gmp_randseed_ui(rnd_state, precision * 0x100000000UL + num_points);
+            gmp_randseed_ui(rnd_state, precision * 0x100000000UL + num_points);
 
             for (unsigned repeat = 1; repeat <= NUM_REPEATS; ++repeat)
             {
@@ -171,26 +172,26 @@ int main()
                     int mpfr_asprintf_result;
 
                     char * max_err_str;
-                    mpfr_asprintf_result = mpfr_asprintf(&max_err_str, "%.20Re", max_err);
+                    mpfr_asprintf_result = mpfr_asprintf(&max_err_str, "%.6Re", max_err);
                     assert(mpfr_asprintf_result > 0);
 
                     char * rms_err_str;
-                    mpfr_asprintf_result = mpfr_asprintf(&rms_err_str, "%.20Re", rms_err);
+                    mpfr_asprintf_result = mpfr_asprintf(&rms_err_str, "%.6Re", rms_err);
                     assert(mpfr_asprintf_result > 0);
 
-                    cout << "precision "     << setw(10) << precision
-                        << "    num_points"  << setw(10) << num_points
-                        << "    repeat"      << setw(10) << repeat
-                        << "    forward"     << setw(16) << duration_forward << " [us]"
-                        << "    inverse"     << setw(16) << duration_inverse << " [us]"
-                        << "    rms_error "  << rms_err_str
-                        << "    max_error "  << max_err_str  << endl;
+                    cout << "precision"  << setw( 8) << precision                << "    "
+                         << "num_points" << setw( 8) << num_points               << "    "
+                         << "repeat"     << setw( 6) << repeat                   << "    "
+                         << "forward"    << setw(12) << duration_forward         << "    "
+                         << "inverse"    << setw(12) << duration_inverse         << "    "
+                         << "rms_error"  << setw(20) << rms_err_str              << "    "
+                         << "max_error"  << setw(20) << max_err_str              << endl;
 
                     mpfr_free_str(max_err_str);
                     mpfr_free_str(rms_err_str);
                 }
 
-                // Trial done. Note if TIME_LIMIT_US was exceeded.
+                // Trial done. Note the time taken.
 
                 total_duration += (duration_forward + duration_inverse);
 
@@ -205,7 +206,10 @@ int main()
             delete [] y;
             delete [] x;
 
-            if (total_duration > TIME_LIMIT_US)
+            // If the total time for the repeats exceeds 'TIME_LIMIT_REPEATS_US',
+            // we are done with this precision; we will start with the next one.
+
+            if (total_duration > TIME_LIMIT_REPEATS_US)
             {
                 break;
             }
