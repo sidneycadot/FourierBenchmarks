@@ -8,6 +8,7 @@
 #include <chrono>
 #include <cassert>
 #include <cstdlib>
+#include <string>
 #include <mpc.h>
 
 #include "FastFourierTransform_ReferenceImplementation.h"
@@ -25,6 +26,19 @@ static bool is_power_of_two(unsigned n)
     }
 
     return (n == 1);
+}
+
+static std::string to_string(const mpfr_t & x)
+{
+    char * str;
+    int mpfr_asprintf_result = mpfr_asprintf(&str, "%.6Re", x);
+    assert(mpfr_asprintf_result > 0);
+
+    std::string r = str;
+
+    mpfr_free_str(str);
+
+    return r;
 }
 
 // We assume a 64-bit unsigned long type, for the gmp_randseed_ui() call.
@@ -161,12 +175,13 @@ int main(int argc, char ** argv)
                 // (6) Calculate max_err = max(abs(y[i] - x[i]).
                 //           and rms_err = sqrt(mean(norm(y[i] - x[i])))
 
-                mpfr_set_ui(max_err, 0, DEFAULT_MPFR_ROUNDINGMODE);
-                mpfr_set_ui(rms_err, 0, DEFAULT_MPFR_ROUNDINGMODE);
+                mpfr_set_zero(max_err, +1);
+                mpfr_set_zero(rms_err, +1);
 
                 for (unsigned i = 0; i < num_points; ++i)
                 {
                     mpc_sub(diff, y[i], x[i], DEFAULT_MPC_ROUNDINGMODE);
+
                     mpc_abs(err, diff, DEFAULT_MPFR_ROUNDINGMODE);
                     mpfr_max(max_err, max_err, err, DEFAULT_MPFR_ROUNDINGMODE);
 
@@ -179,28 +194,13 @@ int main(int argc, char ** argv)
 
                 // (7) Present result for this trial.
 
-                {
-                    int mpfr_asprintf_result;
-
-                    char * max_err_str;
-                    mpfr_asprintf_result = mpfr_asprintf(&max_err_str, "%.6Re", max_err);
-                    assert(mpfr_asprintf_result > 0);
-
-                    char * rms_err_str;
-                    mpfr_asprintf_result = mpfr_asprintf(&rms_err_str, "%.6Re", rms_err);
-                    assert(mpfr_asprintf_result > 0);
-
-                    cout << "precision"  << setw( 8) << precision                << "    "
-                         << "num_points" << setw( 8) << num_points               << "    "
-                         << "repeat"     << setw( 6) << repeat                   << "    "
-                         << "forward"    << setw(12) << duration_forward         << "    "
-                         << "inverse"    << setw(12) << duration_inverse         << "    "
-                         << "rms_error"  << setw(20) << rms_err_str              << "    "
-                         << "max_error"  << setw(20) << max_err_str              << endl;
-
-                    mpfr_free_str(max_err_str);
-                    mpfr_free_str(rms_err_str);
-                }
+                cout << "precision"  << setw( 8) << precision          << "    "
+                     << "num_points" << setw( 8) << num_points         << "    "
+                     << "repeat"     << setw( 6) << repeat             << "    "
+                     << "forward"    << setw(12) << duration_forward   << "    "
+                     << "inverse"    << setw(12) << duration_inverse   << "    "
+                     << "rms_error"  << setw(20) << to_string(rms_err) << "    "
+                     << "max_error"  << setw(20) << to_string(max_err) << endl;
 
                 // Trial done.
 
