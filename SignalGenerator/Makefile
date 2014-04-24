@@ -3,7 +3,9 @@ CXXFLAGS = -W -Wall -O3 -std=c++11
 
 .PHONY : clean
 
-SignalGenerator : SignalGenerator.cc
+LDLIBS = -lmpfr
+
+TestSignalGenerator : TestSignalGenerator.cc
 
 clean :
-	$(RM) SignalGenerator
+	$(RM) TestSignalGenerator
