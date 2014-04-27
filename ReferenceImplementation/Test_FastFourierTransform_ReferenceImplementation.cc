@@ -41,8 +41,24 @@ static std::string to_string(const mpfr_t & x)
     return r;
 }
 
-// We assume a 64-bit unsigned long type, for the gmp_randseed_ui() call.
-static_assert(sizeof(unsigned long) == 8, "unsigned long is too small.");
+static void gmp_randseed_string(gmp_randstate_t & state, const char * s)
+{
+    mpz_t seed;
+
+    mpz_init(seed);
+
+    for (unsigned i = 0; s[i] != '\0'; ++i)
+    {
+        const unsigned c = static_cast<unsigned char>(s[i]);
+
+        mpz_mul_ui(seed, seed, 256);
+        mpz_add_ui(seed, seed, c);
+    }
+
+    gmp_randseed(state, seed);
+
+    mpz_clear(seed);
+}
 
 int main(int argc, char ** argv)
 {
@@ -103,7 +119,8 @@ int main(int argc, char ** argv)
 
             // Initialize the seed depending on precision and num_points, to ensure reproducible runs.
 
-            gmp_randseed_ui(rnd_state, precision * 0x100000000UL + num_points);
+            const string seed = to_string(precision) + "." + to_string(num_points);
+            gmp_randseed_string(rnd_state, seed.c_str());
 
             for (unsigned repeat = 1; repeat <= NUM_REPEATS; ++repeat)
             {
