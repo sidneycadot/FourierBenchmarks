@@ -594,37 +594,38 @@ void execute_tests_r2c_1d(const std::vector<SignalType> & signal_options, const 
 
             for (const CacheTemperature & cacheTemperature : cache_options)
             {
-
-                // Initialize the input
-                // Copy test data
-
-                for (unsigned i = 0; i < n_in; ++i)
-                {
-                    x[i] = v[i];
-                }
-
                 Sampler durationSampler(repeats);
-
-                // Note that we actually do 1 extra evaluation.
-                // This allows us to skip the first repeat which may be marred by cache effects.
-
-                if (cacheTemperature == CacheWarm)
-                {
-                    // We want to do a warm-cache test. So let's heat up the cache by excecuting
-                    // the transform three times (a bit overkill, but that doesn't matter).
-
-                    for (unsigned i = 1; i <= 3; ++i)
-                    {
-                        traits::execute(plan);
-                    }
-                }
 
                 while (durationSampler.n() < repeats)
                 {
+                    // Initialize the input.
+
+                    // Do copy always before transform (planner & transform may destroy input data)
+                    for (unsigned i = 0; i < n_in; ++i)
+                    {
+                        x[i] = v[i];
+                    }
+
+                    // Bring cache in desired state.
+
                     if (cacheTemperature == CacheCold)
                     {
                         // We want do do a cool-cache test.
                         cool_datacache(COOL_DATACACHE_SIZE);
+                    }
+                    else
+                    {
+                        // Ensure we have a warmed-up cache.
+                        for (unsigned rep = 1; rep <= 3; ++rep)
+                        {
+                            traits::execute(plan);
+
+                            // Do copy always before transform (planner & transform may destroy input data)
+                            for (unsigned i = 0; i < n_in; ++i)
+                            {
+                                x[i] = v[i];
+                            }
+                        }
                     }
 
                     auto t1 = chrono::high_resolution_clock::now();
@@ -636,71 +637,71 @@ void execute_tests_r2c_1d(const std::vector<SignalType> & signal_options, const 
                     durationSampler.add(duration);
                 }
 
-                cout << scientific;
-                cout.precision(6);
+                {
+                    cout << scientific;
+                    cout.precision(6);
 
-                cout << "operation"         " " << setw( 8) << left  << "r2c"                                        << " "
-                        "type"              " " << setw(11) << left  << TypeName<typename traits::real_type>::name() << " "
-                        "signal"            " " << setw( 5) << left  << sigtype_to_string(signalType)                << " "
-                        "flags"             " " << setw(11) << left  << flags_to_string(flags)                       << " "
-                        "cache"             " " << setw( 1) << right << cachetemp_to_string(cacheTemperature)        << " "
-                        "n_in"              " " << setw(12) << right << n_in                                         << " "
-                        "n_out"             " " << setw(12) << right << n_out                                        << " "
-                        "planning"          " " << setw(10) << right << planning_duration                            << " "
-                        "reps"              " " << setw( 6) << right << durationSampler.n()                          << " "
-                        "min"               " " << setw(12) << right << durationSampler.min()                        << " "
-                        "median"            " " << setw(12) << right << durationSampler.median()                     << " "
-                        "max"               " " << setw(12) << right << durationSampler.max()                        << " "
-                        "mean"              " " << setw(12) << right << durationSampler.mean()                       << " "
-                        "stddev"            " " << setw(12) << right << durationSampler.stddev()                     << endl;
+                    cout << "operation"         " " << setw( 8) << left  << "r2c"                                        << " "
+                            "type"              " " << setw(11) << left  << TypeName<typename traits::real_type>::name() << " "
+                            "signal"            " " << setw( 5) << left  << sigtype_to_string(signalType)                << " "
+                            "flags"             " " << setw(11) << left  << flags_to_string(flags)                       << " "
+                            "cache"             " " << setw( 1) << right << cachetemp_to_string(cacheTemperature)        << " "
+                            "n_in"              " " << setw(12) << right << n_in                                         << " "
+                            "n_out"             " " << setw(12) << right << n_out                                        << " "
+                            "planning"          " " << setw(10) << right << planning_duration                            << " "
+                            "reps"              " " << setw( 6) << right << durationSampler.n()                          << " "
+                            "min"               " " << setw(12) << right << durationSampler.min()                        << " "
+                            "median"            " " << setw(12) << right << durationSampler.median()                     << " "
+                            "max"               " " << setw(12) << right << durationSampler.max()                        << " "
+                            "mean"              " " << setw(12) << right << durationSampler.mean()                       << " "
+                            "stddev"            " " << setw(12) << right << durationSampler.stddev()                     << endl;
+                }
 
-                traits::destroy_plan(plan);
+            } // cache loop
 
-                traits::free(y);
-                traits::free(x);
+            traits::destroy_plan(plan);
+            traits::free(y);
+            traits::free(x);
 
-                traits::cleanup();
+            traits::cleanup();
 
-            } // flags loop
-        } // cache loop
+        } // flags loop
+
     } // signal type loop
+
 }
 
 int main()
 {
-    const unsigned repeats = 10000;
+    const unsigned repeats = 100;
 
     const std::vector<unsigned> flags_options = {
-        //FFTW_ESTIMATE   | FFTW_PRESERVE_INPUT | FFTW_UNALIGNED,
-        //FFTW_ESTIMATE   | FFTW_DESTROY_INPUT  | FFTW_UNALIGNED,
-        //FFTW_ESTIMATE   | FFTW_PRESERVE_INPUT,
-        //FFTW_ESTIMATE   | FFTW_DESTROY_INPUT,
-        //FFTW_MEASURE    | FFTW_PRESERVE_INPUT | FFTW_UNALIGNED,
-        //FFTW_MEASURE    | FFTW_DESTROY_INPUT  | FFTW_UNALIGNED,
-        //FFTW_MEASURE    | FFTW_PRESERVE_INPUT,
-        //FFTW_MEASURE    | FFTW_DESTROY_INPUT,
-        //FFTW_PATIENT    | FFTW_PRESERVE_INPUT | FFTW_UNALIGNED,
-        //FFTW_PATIENT    | FFTW_DESTROY_INPUT  | FFTW_UNALIGNED,
-        //FFTW_PATIENT    | FFTW_PRESERVE_INPUT,
-        //FFTW_PATIENT    | FFTW_DESTROY_INPUT,
-        //FFTW_EXHAUSTIVE | FFTW_PRESERVE_INPUT | FFTW_UNALIGNED,
-        //FFTW_EXHAUSTIVE | FFTW_DESTROY_INPUT  | FFTW_UNALIGNED,
-        //FFTW_EXHAUSTIVE | FFTW_PRESERVE_INPUT,
+        FFTW_ESTIMATE   | FFTW_PRESERVE_INPUT | FFTW_UNALIGNED,
+        FFTW_ESTIMATE   | FFTW_DESTROY_INPUT  | FFTW_UNALIGNED,
+        FFTW_ESTIMATE   | FFTW_PRESERVE_INPUT,
+        FFTW_ESTIMATE   | FFTW_DESTROY_INPUT,
+        FFTW_MEASURE    | FFTW_PRESERVE_INPUT | FFTW_UNALIGNED,
+        FFTW_MEASURE    | FFTW_DESTROY_INPUT  | FFTW_UNALIGNED,
+        FFTW_MEASURE    | FFTW_PRESERVE_INPUT,
+        FFTW_MEASURE    | FFTW_DESTROY_INPUT,
+        FFTW_PATIENT    | FFTW_PRESERVE_INPUT | FFTW_UNALIGNED,
+        FFTW_PATIENT    | FFTW_DESTROY_INPUT  | FFTW_UNALIGNED,
+        FFTW_PATIENT    | FFTW_PRESERVE_INPUT,
+        FFTW_PATIENT    | FFTW_DESTROY_INPUT,
+        FFTW_EXHAUSTIVE | FFTW_PRESERVE_INPUT | FFTW_UNALIGNED,
+        FFTW_EXHAUSTIVE | FFTW_DESTROY_INPUT  | FFTW_UNALIGNED,
+        FFTW_EXHAUSTIVE | FFTW_PRESERVE_INPUT,
         FFTW_EXHAUSTIVE | FFTW_DESTROY_INPUT
     };
 
     const std::vector<CacheTemperature> cache_options = {
-        //CacheCold,
+        CacheCold,
         CacheWarm
     };
 
     const std::vector<SignalType> signal_options = {
         SignalZero,
-        SignalDC,
         SignalNoise,
-        SignalZero,
-        SignalDC,
-        SignalNoise
     };
 
     for (unsigned n = 1; ; n *= 2)
