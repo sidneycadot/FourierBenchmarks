@@ -1,1 +1,3 @@
-TestFFTW
+TestFFTW-performance
+TestFFTW-precision
+*.o
