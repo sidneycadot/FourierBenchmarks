@@ -1,5 +1,5 @@
 
-CXXFLAGS = -W -Wall -O3 -std=c++11
+CXXFLAGS = -W -Wall -O3 -std=c++11 -g
 
 .PHONY : clean
 

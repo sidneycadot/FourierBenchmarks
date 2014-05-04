@@ -92,6 +92,66 @@ class GaussianNoiseSignal
         mpfr_t im;
 };
 
+// NOTE: This version does NOT have reproducible values for an index.
+class GaussianNoiseSignalFast
+{
+    public:
+
+        GaussianNoiseSignalFast(const std::string & seed_string, const mpfr_prec_t precision)
+        {
+            // Prepare seed
+
+            mpz_t seed;
+
+            mpz_init(seed); // initialize and set to zero.
+
+            for (unsigned i = 0; seed_string[i] != '\0'; ++i)
+            {
+                const unsigned c = static_cast<unsigned char>(seed_string[i]);
+
+                mpz_mul_ui(seed, seed, 256);
+                mpz_add_ui(seed, seed, c);
+            }
+
+            // Prepare "re" and "im" variables, used during random generation.
+
+            mpfr_init2(re, precision);
+            mpfr_init2(im, precision);
+
+            gmp_randinit_default(randstate);
+
+            gmp_randseed(randstate, seed);
+
+            mpz_clear(seed);
+        }
+
+        ~GaussianNoiseSignalFast()
+        {
+            gmp_randclear(randstate);
+
+            mpfr_clear(im);
+            mpfr_clear(re);
+        }
+
+        void operator () (mpc_t & rop, const std::vector<signed> & index)
+        {
+            (void)index;
+
+            // Use index to set up seed, so we're reproducible.
+
+            mpfr_grandom(re, im, randstate, DEFAULT_MPFR_ROUNDINGMODE);
+
+            mpc_set_fr_fr(rop, re, im, DEFAULT_MPFR_ROUNDINGMODE);
+        }
+
+    private:
+
+        gmp_randstate_t randstate;
+
+        mpfr_t re;
+        mpfr_t im;
+};
+
 class ZeroSignal
 {
     public:

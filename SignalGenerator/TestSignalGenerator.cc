@@ -15,7 +15,7 @@ using namespace std;
 
 int main()
 {
-    const unsigned SIZE = 256;
+    const unsigned SIZE = 1024;
 
     unsigned n = SIZE * SIZE;
 
@@ -31,7 +31,7 @@ int main()
     std::vector<unsigned> dims    = {SIZE, SIZE};
     std::vector<signed  > strides = {SIZE, 1};
 
-    GaussianNoiseSignal noise("", precision);
+    GaussianNoiseSignalFast noise("", precision);
     //ZeroSignal zero;
 
     sample(noise, arr.data(), strides, dims, precision);
