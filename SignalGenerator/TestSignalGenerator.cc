@@ -4,7 +4,6 @@
 ////////////////////////////
 
 #include <cstdlib>
-#include <iostream>
 #include <vector>
 #include <complex>
 
@@ -32,7 +31,6 @@ int main()
     sample(noise, arr.data(), strides, dims, precision);
 
     // Free MPFR cache.
-
     mpfr_free_cache();
 
     return EXIT_SUCCESS;
