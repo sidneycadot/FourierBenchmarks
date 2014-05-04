@@ -10,7 +10,8 @@ LDFLAGS  = -L $(IPP_DIR)/lib/intel64
 
 LDLIBS = -lippcore -lipps
 
-ipp_fft : ipp_fft.cc
+TestIPP : TestIPP.cc
 
 clean :
-	$(RM) ipp_fft
+	$(RM) TestIPP
+
