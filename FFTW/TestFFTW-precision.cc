@@ -6,6 +6,9 @@
 #include <vector>
 #include <cassert>
 
+#include <iostream>
+#include <iomanip>
+
 #include "FftwUtils.h"
 #include "SignalGenerator.h"
 #include "ReferenceImplementation.h"
@@ -15,9 +18,7 @@ using namespace std;
 template <typename traits>
 void execute_tests_r2c_1d(const unsigned & n_in, const unsigned & repeats)
 {
-    const mpfr_prec_t precision = 1024;
-
-    GaussianNoiseSignal noise("", precision);
+    const mpfr_prec_t precision = 256;
 
     const unsigned n_out = n_in / 2 + 1;
 
@@ -35,8 +36,10 @@ void execute_tests_r2c_1d(const unsigned & n_in, const unsigned & repeats)
 
     assert(plan != nullptr);
 
-    if (true)
+    for (unsigned rep = 1; rep <= repeats; ++rep)
     {
+        GaussianNoiseSignal noise(to_string(rep), precision);
+
         // Initialize x with signal
 
         const vector<unsigned> dims = { n_in };
@@ -48,9 +51,24 @@ void execute_tests_r2c_1d(const unsigned & n_in, const unsigned & repeats)
 
         traits::execute(plan);
 
+        // Copy result array to zy
+
+        mpc_t * zy = new mpc_t[n_out];
+
+        for (unsigned i = 0; i < n_out; ++i)
+        {
+            mpc_init2(zy[i], precision);
+        }
+
+        for (unsigned i = 0; i < n_out; ++i)
+        {
+            mpc_set_d_d(zy[i], y[i][0], y[i][1], DEFAULT_MPC_ROUNDINGMODE);
+        }
+
         // Do reference implementation.
 
         // Prepare Z
+
         mpc_t * z = new mpc_t[n_in];
 
         for (unsigned i = 0; i < n_in; ++i)
@@ -65,13 +83,24 @@ void execute_tests_r2c_1d(const unsigned & n_in, const unsigned & repeats)
 
         generic_fft(FourierTransformDirection::Forward, z, n_in, 1, precision);
 
-#if 0
         // Determine max error and rms error
         {
+            mpfr_t max_err;
+            mpfr_t rms_err;
+
+            mpfr_init2(max_err, precision);
+            mpfr_init2(rms_err, precision);
+
             mpfr_set_zero(max_err, +1);
             mpfr_set_zero(rms_err, +1);
 
-            for (unsigned i = 0; i < n_in; ++i)
+            mpc_t diff;
+            mpfr_t err;
+
+            mpc_init2(diff, precision);
+            mpfr_init2(err, precision);
+
+            for (unsigned i = 0; i < n_out; ++i)
             {
                 mpc_sub(diff, zy[i], z[i], DEFAULT_MPC_ROUNDINGMODE);
 
@@ -85,24 +114,29 @@ void execute_tests_r2c_1d(const unsigned & n_in, const unsigned & repeats)
             mpfr_div_ui(rms_err, rms_err, n_in, DEFAULT_MPFR_ROUNDINGMODE);
             mpfr_sqrt(rms_err, rms_err, DEFAULT_MPFR_ROUNDINGMODE);
 
-            // (7) Present result for this trial.
-
             cout << "precision"  << setw( 8) << precision          << "    "
-                    << "num_points" << setw( 8) << num_points         << "    "
-                    << "repeat"     << setw( 6) << repeat             << "    "
-                    << "forward"    << setw(12) << duration_forward   << "    "
-                    << "inverse"    << setw(12) << duration_inverse   << "    "
-                    << "rms_error"  << setw(20) << to_string(rms_err) << "    "
-                    << "max_error"  << setw(20) << to_string(max_err) << endl;
+                 << "rms_error"  << setw(20) << to_string(rms_err) << "    "
+                 << "max_error"  << setw(20) << to_string(max_err) << endl;
+
+            mpfr_clear(err);
+            mpc_clear(diff);
+
+            mpfr_clear(rms_err);
+            mpfr_clear(max_err);
         }
-#endif
 
         for (unsigned i = 0; i < n_in; ++i)
         {
             mpc_clear(z[i]);
         }
 
+        for (unsigned i = 0; i < n_out; ++i)
+        {
+            mpc_clear(zy[i]);
+        }
+
         delete [] z;
+        delete [] zy;
     }
 
     traits::destroy_plan(plan);

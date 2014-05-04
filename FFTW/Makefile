@@ -11,8 +11,10 @@ LDLIBS = -lfftw3f -lfftw3 -lfftw3l -lmpc -lmpfr -lgmp
 #LDLIBS = -lfftw3_omp -lfftw3_omp -lfftw3l_omp # -lfftw3q_omp
 
 TARGETS = TestFFTW-performance TestFFTW-precision
+
 vpath % ../ReferenceImplementation
 vpath % ../SignalGenerator
+vpath % ../MultiPrecisionUtils
 
 .PHONY : clean default
 
@@ -22,11 +24,13 @@ TestFFTW-performance : TestFFTW-performance.o FftwUtils.h
 
 TestFFTW-performance.o : TestFFTW-performance.cc FftwUtils.h
 
-TestFFTW-precision : TestFFTW-precision.o ReferenceImplementation.o
+TestFFTW-precision : TestFFTW-precision.o ReferenceImplementation.o MultiPrecisionUtils.o
 
 TestFFTW-precision.o : TestFFTW-precision.cc FftwUtils.h SignalGenerator.h ReferenceImplementation.h
 
 ReferenceImplementation.o : ReferenceImplementation.cc ReferenceImplementation.h
+
+MultiPrecisionUtils.o : MultiPrecisionUtils.cc MultiPrecisionUtils.h
 
 TestFFTW : TestFFTW.cc FftwUtils.h
 
