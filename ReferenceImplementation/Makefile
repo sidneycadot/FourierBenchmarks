@@ -1,6 +1,7 @@
 
 CXXFLAGS = -W -Wall -O3 -std=c++11 -g
 CC = $(CXX)
+CPPFLAGS = -I../MultiPrecisionUtils
 
 .PHONY : clean
 
@@ -9,13 +10,17 @@ LDLIBS = -lmpc -lmpfr -lgmp
 
 TARGET = Test_FastFourierTransform_ReferenceImplementation
 
-OBJS = Test_FastFourierTransform_ReferenceImplementation.o FastFourierTransform_ReferenceImplementation.o
+OBJS = Test_FastFourierTransform_ReferenceImplementation.o FastFourierTransform_ReferenceImplementation.o MultiPrecisionUtils.o
 
 $(TARGET) : $(OBJS)
 
-Test_FastFourierTransform_ReferenceImplementation.o : Test_FastFourierTransform_ReferenceImplementation.cc FastFourierTransform_ReferenceImplementation.h
+vpath % ../MultiPrecisionUtils
 
-FastFourierTransform_ReferenceImplementation.o : FastFourierTransform_ReferenceImplementation.cc FastFourierTransform_ReferenceImplementation.h
+Test_FastFourierTransform_ReferenceImplementation.o : Test_FastFourierTransform_ReferenceImplementation.cc FastFourierTransform_ReferenceImplementation.h MultiPrecisionUtils.h
+
+FastFourierTransform_ReferenceImplementation.o : FastFourierTransform_ReferenceImplementation.cc FastFourierTransform_ReferenceImplementation.h MultiPrecisionUtils.h
+
+MultiPrecisionUtils.o : MultiPrecisionUtils.cc MultiPrecisionUtils.h
 
 clean :
 	$(RM) $(TARGET) $(OBJS)

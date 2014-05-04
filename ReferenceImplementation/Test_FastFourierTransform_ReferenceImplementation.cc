@@ -12,6 +12,7 @@
 #include <mpc.h>
 
 #include "FastFourierTransform_ReferenceImplementation.h"
+#include "MultiPrecisionUtils.h"
 
 static bool is_power_of_two(unsigned n)
 {
@@ -26,19 +27,6 @@ static bool is_power_of_two(unsigned n)
     }
 
     return (n == 1);
-}
-
-static std::string to_string(const mpfr_t & x)
-{
-    char * str;
-    int mpfr_asprintf_result = mpfr_asprintf(&str, "%.6Re", x);
-    assert(mpfr_asprintf_result > 0);
-
-    std::string r = str;
-
-    mpfr_free_str(str);
-
-    return r;
 }
 
 static void gmp_randseed_string(gmp_randstate_t & state, const char * s)

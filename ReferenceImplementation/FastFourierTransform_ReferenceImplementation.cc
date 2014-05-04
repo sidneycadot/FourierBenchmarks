@@ -3,9 +3,10 @@
 // FastFourierTransform_ReferenceImplementation.cc //
 /////////////////////////////////////////////////////
 
-#include "FastFourierTransform_ReferenceImplementation.h"
-
 #include <cassert>
+
+#include "FastFourierTransform_ReferenceImplementation.h"
+#include "MultiPrecisionUtils.h"
 
 void pow2_fft(const FourierTransformDirection direction, mpc_t * z, const unsigned n, const unsigned stride, const mpfr_prec_t precision)
 {
