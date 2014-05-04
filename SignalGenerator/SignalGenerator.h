@@ -200,7 +200,7 @@ void map_value(std::complex<T> & rop, const mpc_t & op)
 }
 
 template <typename Function, typename T>
-void sample(Function & f, T * base, const std::vector<signed> & strides, const std::vector<unsigned> & dims, const mpfr_prec_t precision)
+void sample(Function & f, T * base, const std::vector<signed> & strides, const std::vector<unsigned> & dims, const mpfr_prec_t & precision)
 {
     mpc_t value;
 
@@ -229,7 +229,7 @@ void sample(Function & f, T * base, const std::vector<signed> & strides, const s
             ++index[incdim];
             offset += strides[incdim];
 
-            if (index[incdim] != dims[incdim])
+            if (static_cast<unsigned>(index[incdim]) != dims[incdim])
             {
                 break;
             }
