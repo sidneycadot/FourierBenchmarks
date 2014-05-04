@@ -5,12 +5,11 @@ CPPFLAGS = -I../MultiPrecisionUtils
 
 .PHONY : clean
 
-LDFLAGS = --static
 LDLIBS = -lmpc -lmpfr -lgmp
 
-TARGET = Test_FastFourierTransform_ReferenceImplementation
+TARGET = TestReferenceImplementation
 
-OBJS = Test_FastFourierTransform_ReferenceImplementation.o FastFourierTransform_ReferenceImplementation.o MultiPrecisionUtils.o
+OBJS = TestReferenceImplementation.o ReferenceImplementation.o MultiPrecisionUtils.o
 
 $(TARGET) : $(OBJS)
 

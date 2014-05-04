@@ -1,7 +1,7 @@
 
-//////////////////////////////////////////////////////////
-// Test_FastFourierTransform_ReferenceImplementation.cc //
-//////////////////////////////////////////////////////////
+////////////////////////////////////
+// TestReferenceImplementation.cc //
+////////////////////////////////////
 
 #include <iostream>
 #include <iomanip>
@@ -11,7 +11,7 @@
 #include <string>
 #include <mpc.h>
 
-#include "FastFourierTransform_ReferenceImplementation.h"
+#include "ReferenceImplementation.h"
 #include "MultiPrecisionUtils.h"
 
 static bool is_power_of_two(unsigned n)
