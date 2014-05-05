@@ -17,7 +17,7 @@ const mpc_rnd_t  DEFAULT_MPC_ROUNDINGMODE  = MPC_RNDNN;
 std::string to_string(const mpfr_t & x);
 
 template <typename T>
-T mpfr_to_native(const mpfr_t & op);
+inline T mpfr_to_native(const mpfr_t & op);
 
 template <>
 inline float mpfr_to_native<float>(const mpfr_t & op)
