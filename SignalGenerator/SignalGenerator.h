@@ -18,21 +18,9 @@ class GaussianNoiseSignal
 {
     public:
 
-        GaussianNoiseSignal(const std::string & seed_string, const mpfr_prec_t precision)
+        GaussianNoiseSignal(const std::string & seed_string, const mpfr_prec_t precision) :
+            seed_string(seed_string)
         {
-            // Prepare seed
-
-            mpz_init(seed); // initialize and set to zero.
-            mpz_init(seed2);
-
-            for (unsigned i = 0; seed_string[i] != '\0'; ++i)
-            {
-                const unsigned c = static_cast<unsigned char>(seed_string[i]);
-
-                mpz_mul_ui(seed, seed, 256);
-                mpz_add_ui(seed, seed, c);
-            }
-
             // Prepare "re" and "im" variables, used during random generation.
 
             mpfr_init2(re, precision);
@@ -47,33 +35,26 @@ class GaussianNoiseSignal
 
             mpfr_clear(im);
             mpfr_clear(re);
-
-            mpz_clear(seed2);
-            mpz_clear(seed);
         }
 
         void operator () (mpc_t & rop, const std::vector<signed> & index)
         {
             // Use index to set up seed, so we're reproducible.
 
-            std::string index_string;
+            std::string index_string = seed_string;
+
             for (unsigned i = 0; i < index.size(); ++i)
             {
-                index_string += ".";
+                if (index_string.empty())
+                {
+                    // add separator.
+                    index_string += ".";
+                }
+
                 index_string += std::to_string(index[i]);
             }
 
-            mpz_set(seed2, seed);
-
-            for (unsigned i = 0; index_string[i] != '\0'; ++i)
-            {
-                const unsigned c = static_cast<unsigned char>(index_string[i]);
-
-                mpz_mul_ui(seed2, seed2, 256);
-                mpz_add_ui(seed2, seed2, c);
-            }
-
-            gmp_randseed(randstate, seed2);
+            gmp_randseed_string(randstate, index_string);
 
             mpfr_grandom(re, im, randstate, DEFAULT_MPFR_ROUNDINGMODE);
 
@@ -82,8 +63,7 @@ class GaussianNoiseSignal
 
     private:
 
-        mpz_t seed;
-        mpz_t seed2;
+        std::string seed_string;
 
         gmp_randstate_t randstate;
 
@@ -102,18 +82,6 @@ class GaussianNoiseSignalFast
         {
             // Prepare seed
 
-            mpz_t seed;
-
-            mpz_init(seed); // initialize and set to zero.
-
-            for (unsigned i = 0; seed_string[i] != '\0'; ++i)
-            {
-                const unsigned c = static_cast<unsigned char>(seed_string[i]);
-
-                mpz_mul_ui(seed, seed, 256);
-                mpz_add_ui(seed, seed, c);
-            }
-
             // Prepare "re" and "im" variables, used during random generation.
 
             mpfr_init2(re, precision);
@@ -121,9 +89,7 @@ class GaussianNoiseSignalFast
 
             gmp_randinit_default(randstate);
 
-            gmp_randseed(randstate, seed);
-
-            mpz_clear(seed);
+            gmp_randseed_string(randstate, seed_string);
         }
 
         ~GaussianNoiseSignalFast()
@@ -136,7 +102,7 @@ class GaussianNoiseSignalFast
 
         void operator () (mpc_t & rop, const std::vector<signed> & index)
         {
-            (void)index;
+            (void)index; // unused
 
             // Use index to set up seed, so we're reproducible.
 

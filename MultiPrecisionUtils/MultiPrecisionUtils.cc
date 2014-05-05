@@ -19,3 +19,22 @@ std::string to_string(const mpfr_t & x)
 
     return r;
 }
+
+void gmp_randseed_string(gmp_randstate_t & state, const std::string & s)
+{
+    mpz_t seed;
+
+    mpz_init(seed);
+
+    for (unsigned i = 0; s[i] != '\0'; ++i)
+    {
+        const unsigned c = static_cast<unsigned char>(s[i]);
+
+        mpz_mul_ui(seed, seed, 256);
+        mpz_add_ui(seed, seed, c);
+    }
+
+    gmp_randseed(state, seed);
+
+    mpz_clear(seed);
+}
