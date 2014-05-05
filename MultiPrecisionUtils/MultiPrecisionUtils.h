@@ -20,19 +20,19 @@ template <typename T>
 T mpfr_to_native(const mpfr_t & op);
 
 template <>
-float mpfr_to_native<float>(const mpfr_t & op)
+inline float mpfr_to_native<float>(const mpfr_t & op)
 {
     return mpfr_get_flt(op, DEFAULT_MPFR_ROUNDINGMODE);
 }
 
 template <>
-double mpfr_to_native<double>(const mpfr_t & op)
+inline double mpfr_to_native<double>(const mpfr_t & op)
 {
     return mpfr_get_d(op, DEFAULT_MPFR_ROUNDINGMODE);
 }
 
 template <>
-long double mpfr_to_native<long double>(const mpfr_t & op)
+inline long double mpfr_to_native<long double>(const mpfr_t & op)
 {
     return mpfr_get_ld(op, DEFAULT_MPFR_ROUNDINGMODE);
 }
