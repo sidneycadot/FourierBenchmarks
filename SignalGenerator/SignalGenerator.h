@@ -163,39 +163,18 @@ class ZeroSignal
         }
 };
 
-template <typename T>
-T mpfr_value(const mpfr_t & op);
-
-template <>
-float mpfr_value<float>(const mpfr_t & op)
-{
-    return mpfr_get_flt(op, DEFAULT_MPFR_ROUNDINGMODE);
-}
-
-template <>
-double mpfr_value<double>(const mpfr_t & op)
-{
-    return mpfr_get_d(op, DEFAULT_MPFR_ROUNDINGMODE);
-}
-
-template <>
-long double mpfr_value<long double>(const mpfr_t & op)
-{
-    return mpfr_get_ld(op, DEFAULT_MPFR_ROUNDINGMODE);
-}
-
 // Routines to map an mpc_t to a complex or real value.
 
 template <typename T>
 void map_value(T & rop, const mpc_t & op)
 {
-    rop = mpfr_value<T>(mpc_realref(op));
+    rop = mpfr_to_native<T>(mpc_realref(op));
 }
 
 template <typename T>
 void map_value(std::complex<T> & rop, const mpc_t & op)
 {
-    rop = std::complex<T>(mpfr_value<T>(mpc_realref(op)), mpfr_value<T>(mpc_imagref(op)));
+    rop = std::complex<T>(mpfr_to_native<T>(mpc_realref(op)), mpfr_to_native<T>(mpc_imagref(op)));
 }
 
 template <typename Function, typename T>
