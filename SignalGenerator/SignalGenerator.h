@@ -96,6 +96,8 @@ class GaussianNoiseSignalFast
 {
     public:
 
+        // Note: reproducibility of randomly generated numbers is only ensured if precision is identical.
+
         GaussianNoiseSignalFast(const std::string & seed_string, const mpfr_prec_t precision)
         {
             // Prepare seed
@@ -168,13 +170,13 @@ class ZeroSignal
 template <typename T>
 void map_value(T & rop, const mpc_t & op)
 {
-    rop = mpfr_to_native<T>(mpc_realref(op));
+    rop = mpfr_get_fp<T>(mpc_realref(op), DEFAULT_MPFR_ROUNDINGMODE);
 }
 
 template <typename T>
 void map_value(std::complex<T> & rop, const mpc_t & op)
 {
-    rop = std::complex<T>(mpfr_to_native<T>(mpc_realref(op)), mpfr_to_native<T>(mpc_imagref(op)));
+    rop = std::complex<T>(mpfr_get_fp<T>(mpc_realref(op), DEFAULT_MPFR_ROUNDINGMODE), mpfr_get_fp<T>(mpc_imagref(op), DEFAULT_MPFR_ROUNDINGMODE));
 }
 
 template <typename Function, typename T>

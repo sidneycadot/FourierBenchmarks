@@ -18,6 +18,8 @@ using namespace std;
 template <typename traits>
 void execute_tests_r2c_1d(const unsigned & n_in, const unsigned & repeats)
 {
+    const mpfr_prec_t NOISE_PRECISION = 256; // We fix this to ensure reproducibility.
+
     const mpfr_prec_t precision = 256;
 
     const unsigned n_out = n_in / 2 + 1;
@@ -38,7 +40,7 @@ void execute_tests_r2c_1d(const unsigned & n_in, const unsigned & repeats)
 
     for (unsigned rep = 1; rep <= repeats; ++rep)
     {
-        GaussianNoiseSignal noise(to_string(rep), precision);
+        GaussianNoiseSignal noise(to_string(rep), NOISE_PRECISION);
 
         // Initialize x with signal
 
@@ -62,7 +64,7 @@ void execute_tests_r2c_1d(const unsigned & n_in, const unsigned & repeats)
 
         for (unsigned i = 0; i < n_out; ++i)
         {
-            mpc_set_d_d(zy[i], y[i][0], y[i][1], DEFAULT_MPC_ROUNDINGMODE);
+            mpc_set_fp_fp(zy[i], y[i][0], y[i][1], DEFAULT_MPC_ROUNDINGMODE);
         }
 
         // Do reference implementation.
@@ -78,7 +80,7 @@ void execute_tests_r2c_1d(const unsigned & n_in, const unsigned & repeats)
 
         for (unsigned i = 0; i < n_in; ++i)
         {
-            mpc_set_d(z[i], x[i], DEFAULT_MPC_ROUNDINGMODE);
+            mpc_set_fp(z[i], x[i], DEFAULT_MPC_ROUNDINGMODE);
         }
 
         generic_fft(FourierTransformDirection::Forward, z, n_in, 1, precision);
@@ -114,9 +116,9 @@ void execute_tests_r2c_1d(const unsigned & n_in, const unsigned & repeats)
             mpfr_div_ui(rms_err, rms_err, n_in, DEFAULT_MPFR_ROUNDINGMODE);
             mpfr_sqrt(rms_err, rms_err, DEFAULT_MPFR_ROUNDINGMODE);
 
-            cout << "precision"  << setw( 8) << precision          << "    "
-                 << "rms_error"  << setw(20) << to_string(rms_err) << "    "
-                 << "max_error"  << setw(20) << to_string(max_err) << endl;
+            cout << "precision" " " << setw( 8) << precision          << " "
+                    "rms_error" " " << setw(20) << to_string(rms_err) << " "
+                    "max_error" " " << setw(20) << to_string(max_err) << endl;
 
             mpfr_clear(err);
             mpc_clear(diff);
@@ -148,8 +150,8 @@ void execute_tests_r2c_1d(const unsigned & n_in, const unsigned & repeats)
 
 int main()
 {
-    const unsigned n = 16;
-    const unsigned repeats = 100;
+    const unsigned n = 1024;
+    const unsigned repeats = 1000;
 
     execute_tests_r2c_1d<FFTW_Traits<float>>(n, repeats);
 
