@@ -10,8 +10,8 @@
 #include <iomanip>
 
 #include "FftwUtils.h"
-#include "SignalGenerator.h"
-#include "ReferenceImplementation.h"
+#include "SignalGenerator/SignalGenerator.h"
+#include "ReferenceImplementation/ReferenceImplementation.h"
 
 using namespace std;
 

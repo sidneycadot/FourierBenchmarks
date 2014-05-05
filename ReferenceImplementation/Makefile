@@ -1,7 +1,7 @@
 
 CXXFLAGS = -W -Wall -O3 -std=c++11 -g
 CC = $(CXX)
-CPPFLAGS = -I../MultiPrecisionUtils
+CPPFLAGS = -I..
 
 .PHONY : clean
 

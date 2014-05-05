@@ -11,8 +11,8 @@
 #include <string>
 #include <mpc.h>
 
+#include "MultiPrecisionUtils/MultiPrecisionUtils.h"
 #include "ReferenceImplementation.h"
-#include "MultiPrecisionUtils.h"
 
 static bool is_power_of_two(unsigned n)
 {

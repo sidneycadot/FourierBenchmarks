@@ -1,6 +1,6 @@
 
 CXXFLAGS = -W -Wall -O3 -std=c++11 -g
-CPPFLAGS = -I.. -I../SignalGenerator -I../ReferenceImplementation -I../SignalGenerator
+CPPFLAGS = -I..
 
 CC=$(CXX)
 
