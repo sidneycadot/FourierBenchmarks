@@ -145,8 +145,8 @@ void map_value(std::complex<T> & rop, const mpc_t & op)
     rop = std::complex<T>(mpfr_get_fp<T>(mpc_realref(op), DEFAULT_MPFR_ROUNDINGMODE), mpfr_get_fp<T>(mpc_imagref(op), DEFAULT_MPFR_ROUNDINGMODE));
 }
 
-template <typename Function, typename T>
-void sample(Function & f, T * base, const std::vector<signed> & strides, const std::vector<unsigned> & dims, const mpfr_prec_t & precision)
+template <typename SignalGeneratorFunction, typename T>
+void sample(SignalGeneratorFunction & f, T * base, const std::vector<signed> & strides, const std::vector<unsigned> & dims, const mpfr_prec_t & precision)
 {
     mpc_t value;
 
@@ -160,13 +160,13 @@ void sample(Function & f, T * base, const std::vector<signed> & strides, const s
     {
         // "index" and "offset" are now valid.
 
-         // set value to f(index)
+        // set value to f(index)
 
         f(value, index);
 
         map_value(base[offset], value);
 
-        // Proceed to next item.
+        // Proceed to next item (increase the "index" vector by one, procedeeding to the next coordinate if needed).
 
         int incdim = dims.size();
 

@@ -6,6 +6,7 @@
 #ifndef MultiPrecisionUtils_h
 #define MultiPrecisionUtils_h
 
+#include <complex>
 #include <string>
 
 #include <gmp.h>
@@ -40,6 +41,17 @@ template <>
 inline long double mpfr_get_fp<long double>(const mpfr_t & op, const mpfr_rnd_t rnd)
 {
     return mpfr_get_ld(op, rnd);
+}
+
+// get native complex floating-point type from mpc
+
+template <typename T>
+inline std::complex<T> mpc_get_complex_fp(const mpc_t & op, const mpfr_rnd_t rnd)
+{
+    const T re = mpfr_get_fp<T>(mpc_realref(op), rnd);
+    const T im = mpfr_get_fp<T>(mpc_imagref(op), rnd);
+
+    return std::complex<T>(re, im);
 }
 
 // assign mpc from native floating-point type (real part only)

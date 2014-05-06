@@ -341,14 +341,14 @@ class Sampler
         std::vector<double> samples;
 };
 
-template <typename traits>
+template <typename fftw_traits>
 void execute_tests_r2c_1d(const std::vector<SignalType> & signal_options, const std::vector<unsigned> & flags_options, const std::vector<CacheTemperature> & cache_options, const unsigned & n_in, const unsigned & repeats)
 {
     const unsigned n_out = n_in / 2 + 1;
 
     for (const SignalType & signalType : signal_options)
     {
-        vector<typename traits::real_type> v(n_in);
+        vector<typename fftw_traits::real_type> v(n_in);
 
         switch(signalType)
         {
@@ -380,14 +380,14 @@ void execute_tests_r2c_1d(const std::vector<SignalType> & signal_options, const 
 
         for (const unsigned & flags : flags_options)
         {
-            typename traits::real_type * x = traits::alloc_real(n_in);
+            typename fftw_traits::real_type * x = fftw_traits::alloc_real(n_in);
             assert(x != nullptr);
 
-            typename traits::complex_type * y = traits::alloc_complex(n_out);
+            typename fftw_traits::complex_type * y = fftw_traits::alloc_complex(n_out);
             assert(y != nullptr);
 
             auto t1 = chrono::high_resolution_clock::now();
-            typename traits::plan plan = traits::plan_dft_r2c_1d(n_in, x, y, flags);
+            typename fftw_traits::plan plan = fftw_traits::plan_dft_r2c_1d(n_in, x, y, flags);
             auto t2 = chrono::high_resolution_clock::now();
 
             assert(plan != nullptr);
@@ -420,7 +420,7 @@ void execute_tests_r2c_1d(const std::vector<SignalType> & signal_options, const 
                         // Ensure we have a warmed-up cache.
                         for (unsigned rep = 1; rep <= 3; ++rep)
                         {
-                            traits::execute(plan);
+                            fftw_traits::execute(plan);
 
                             // Do copy always before transform (planner & transform may destroy input data)
                             for (unsigned i = 0; i < n_in; ++i)
@@ -431,7 +431,7 @@ void execute_tests_r2c_1d(const std::vector<SignalType> & signal_options, const 
                     }
 
                     auto t1 = chrono::high_resolution_clock::now();
-                    traits::execute(plan);
+                    fftw_traits::execute(plan);
                     auto t2 = chrono::high_resolution_clock::now();
 
                     const double duration = chrono::duration_cast<chrono::microseconds>(t2 - t1).count() / 1e6;
@@ -443,29 +443,29 @@ void execute_tests_r2c_1d(const std::vector<SignalType> & signal_options, const 
                     cout << scientific;
                     cout.precision(6);
 
-                    cout << "operation"         " " << setw( 8) << left  << "r2c"                                        << " "
-                            "type"              " " << setw(11) << left  << TypeName<typename traits::real_type>::name() << " "
-                            "signal"            " " << setw( 5) << left  << sigtype_to_string(signalType)                << " "
-                            "flags"             " " << setw(11) << left  << flags_to_string(flags)                       << " "
-                            "cache"             " " << setw( 1) << right << cachetemp_to_string(cacheTemperature)        << " "
-                            "n_in"              " " << setw(12) << right << n_in                                         << " "
-                            "n_out"             " " << setw(12) << right << n_out                                        << " "
-                            "planning"          " " << setw(10) << right << planning_duration                            << " "
-                            "reps"              " " << setw( 6) << right << durationSampler.n()                          << " "
-                            "min"               " " << setw(12) << right << durationSampler.min()                        << " "
-                            "median"            " " << setw(12) << right << durationSampler.median()                     << " "
-                            "max"               " " << setw(12) << right << durationSampler.max()                        << " "
-                            "mean"              " " << setw(12) << right << durationSampler.mean()                       << " "
-                            "stddev"            " " << setw(12) << right << durationSampler.stddev()                     << endl;
+                    cout << "operation"         " " << setw( 8) << left  << "r2c"                                             << " "
+                            "type"              " " << setw(11) << left  << TypeName<typename fftw_traits::real_type>::name() << " "
+                            "signal"            " " << setw( 5) << left  << sigtype_to_string(signalType)                     << " "
+                            "flags"             " " << setw(11) << left  << flags_to_string(flags)                            << " "
+                            "cache"             " " << setw( 1) << right << cachetemp_to_string(cacheTemperature)             << " "
+                            "n_in"              " " << setw(12) << right << n_in                                              << " "
+                            "n_out"             " " << setw(12) << right << n_out                                             << " "
+                            "planning"          " " << setw(10) << right << planning_duration                                 << " "
+                            "reps"              " " << setw( 6) << right << durationSampler.n()                               << " "
+                            "min"               " " << setw(12) << right << durationSampler.min()                             << " "
+                            "median"            " " << setw(12) << right << durationSampler.median()                          << " "
+                            "max"               " " << setw(12) << right << durationSampler.max()                             << " "
+                            "mean"              " " << setw(12) << right << durationSampler.mean()                            << " "
+                            "stddev"            " " << setw(12) << right << durationSampler.stddev()                          << endl;
                 }
 
             } // cache loop
 
-            traits::destroy_plan(plan);
-            traits::free(y);
-            traits::free(x);
+            fftw_traits::destroy_plan(plan);
+            fftw_traits::free(y);
+            fftw_traits::free(x);
 
-            traits::cleanup();
+            fftw_traits::cleanup();
 
         } // flags loop
 
@@ -507,7 +507,7 @@ int main()
 
     for (unsigned n = 1; ; n *= 2)
     {
-        execute_tests_r2c_1d<FFTW_Traits<double>>(signal_options, flags_options, cache_options, n, repeats);
+        execute_tests_r2c_1d<fftw_traits<double>>(signal_options, flags_options, cache_options, n, repeats);
     }
 
     return EXIT_SUCCESS;

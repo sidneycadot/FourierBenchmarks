@@ -8,10 +8,10 @@
 
 #include <fftw3.h>
 
-template <typename fp_t> struct FFTW_Traits;
+template <typename fp_t> struct fftw_traits;
 
 template <>
-struct FFTW_Traits<float>
+struct fftw_traits<float>
 {
     typedef float         real_type;
     typedef fftwf_complex complex_type;
@@ -60,7 +60,7 @@ struct FFTW_Traits<float>
 };
 
 template <>
-struct FFTW_Traits<double>
+struct fftw_traits<double>
 {
     typedef double       real_type;
     typedef fftw_complex complex_type;
@@ -109,7 +109,7 @@ struct FFTW_Traits<double>
 };
 
 template <>
-struct FFTW_Traits<long double>
+struct fftw_traits<long double>
 {
     typedef long double real_type;
     typedef fftwl_complex complex_type;
@@ -158,7 +158,7 @@ struct FFTW_Traits<long double>
 };
 
 template <>
-struct FFTW_Traits<__float128>
+struct fftw_traits<__float128>
 {
     typedef __float128    real_type;
     typedef fftwq_complex complex_type;
