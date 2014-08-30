@@ -21,17 +21,18 @@
 //
 // The FFT implemented has the following properties:
 //
-//  - both "forward" and "inverse" transforms
-//  - 1D complex input, 1D complex output
-//  - in-place (output overwrites input).
-//  - stride may be specified.
-//  - number of points n can be any integer (not restricted to powers of 2).
+//  - both "forward" and "inverse" transforms are implemented;
+//  - 1D complex input, 1D complex output;
+//  - in-place (output overwrites input);
+//  - stride may be specified;
+//  - number of points n can be any integer (not restricted to powers of 2);
 //  - arbitrary precision (using MPC / MPFR / GMP).
 //
 // This FFT code is optimized for accuracy, not performance:
 //
 // - For all n, the algorithm is O(n log n), so this is indeed a "Fast" FFT.
-//   However, it is still pretty slow for an FFT.
+//   However, it is still pretty slow since we use the CZT and arbitrary
+//   precision numbers.
 //
 // - The FFT is actually calculated using the Chirp Z-transform (CZT).
 //

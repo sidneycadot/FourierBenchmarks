@@ -89,7 +89,7 @@ int main(int argc, char ** argv)
             // Initialize the seed depending on precision and num_points, to ensure reproducible runs.
 
             const string seed = to_string(precision) + "." + to_string(num_points);
-            gmp_randseed_string(rnd_state, seed.c_str());
+            gmp_randseed_string(rnd_state, seed);
 
             for (unsigned repeat = 1; repeat <= NUM_REPEATS; ++repeat)
             {
@@ -104,8 +104,7 @@ int main(int argc, char ** argv)
                     mpc_set_fr_fr(x[i], rnd_re, rnd_im, DEFAULT_MPC_ROUNDINGMODE);
                 }
 
-                // (2) Copy x to y.
-                //     We do this because our FFT is in-place, and we need the original data to determine our error.
+                // (2) Copy x to y. Our FFT is in-place, we need the original data to determine the error.
 
                 for (unsigned i = 0; i < num_points; ++i)
                 {
