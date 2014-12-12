@@ -2,7 +2,6 @@
 Reference Implementation of the FFT
 ===================================
 
-The code in this directory is our reference FFT implementation, which
-support arbitrary-precision FFT calculations.
+The code in this directory is our reference FFT implementation that support arbitrary-precision FFT calculations.
 
-See FastFourierTransform_ReferenceImplementation.h for details.
+See ReferenceImplementation.h for details.

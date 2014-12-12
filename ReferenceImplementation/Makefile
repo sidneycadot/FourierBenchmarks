@@ -15,9 +15,9 @@ $(TARGET) : $(OBJS)
 
 vpath % ../MultiPrecisionUtils
 
-Test_FastFourierTransform_ReferenceImplementation.o : Test_FastFourierTransform_ReferenceImplementation.cc FastFourierTransform_ReferenceImplementation.h MultiPrecisionUtils.h
+TestReferenceImplementation.o : TestReferenceImplementation.cc ReferenceImplementation.h MultiPrecisionUtils.h
 
-FastFourierTransform_ReferenceImplementation.o : FastFourierTransform_ReferenceImplementation.cc FastFourierTransform_ReferenceImplementation.h MultiPrecisionUtils.h
+ReferenceImplementation.o : ReferenceImplementation.cc ReferenceImplementation.h MultiPrecisionUtils.h
 
 MultiPrecisionUtils.o : MultiPrecisionUtils.cc MultiPrecisionUtils.h
 
