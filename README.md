@@ -32,7 +32,6 @@
 
 ## Overview
 
-|------------|-----------------------------------------|----------------|--------|---------|--------------------------------------------|---------|
 | name       | long name                               | CPU/GPU        | vendor | license | homepage                                   | version |
 |------------|-----------------------------------------|----------------|--------|---------|--------------------------------------------|---------|
 | MKL        | Intel Math Kernel Library               | CPU            | Intel  |         | https://software.intel.com/en-us/intel-mkl |         |
@@ -41,7 +40,6 @@
 | FFTS       | Fastest Fourier Transfer in the South   | CPU            |        |         | https://github.com/anthonix/ffts           |         |
 | KissFFT    | Kiss FFT                                | CPU            |        | BSD     | http://sourceforge.net/projects/kissfft/   |         |
 | cuFFT      | nVidia CUDA FFT                         | GPU (nVidia)   | nVidia |         | https://developer.nvidia.com/cuFFT         |         |
-|------------|-----------------------------------------|----------------|--------|---------|--------------------------------------------|---------|
 
 ## MKL
 
