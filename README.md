@@ -1,6 +1,4 @@
 
-This repository
-
 * Functionality offered
 
   - Number of transforms
@@ -13,45 +11,58 @@ This repository
   - In-place or not
   - Preserve input or not
 
-* Precision of calculations
+# Quality
 
-* Speed of calculations
+## Precision of calculations
+
+## Speed of calculations
 
   - For different sizes, memory layouts, etc.
   - Cache
   - Threading
+  - Optimization (planning) level (FFTW)
+  - Different HW plaforms? (Intel/AMD, AMD/nVidia)
 
-* Quality of implementation
+## Quality of implementation
 
   - Memory leaks?
 
-Variations:
 
-    Multithreading
-    Optimization (planning) level (FFTW)
+# Implementations
 
-Implementations:
+## Overview
 
-CPU:
+|------------|-----------------------------------------|----------------|--------|---------|--------------------------------------------|---------|
+| name       | long name                               | CPU/GPU        | vendor | license | homepage                                   | version |
+|------------|-----------------------------------------|----------------|--------|---------|--------------------------------------------|---------|
+| MKL        | Intel Math Kernel Library               | CPU            | Intel  |         | https://software.intel.com/en-us/intel-mkl |         |
+| IPP        | Intel Integrated Performance Primitives | CPU            | Intel  |         | https://software.intel.com/en-us/intel-ipp |         |
+| FFTW       | Fastest Fourier Transfer in the West    | CPU            |        |         |                                            |         |
+| FFTS       | Fastest Fourier Transfer in the South   | CPU            |        |         | https://github.com/anthonix/ffts           |         |
+| KissFFT    | Kiss FFT                                | CPU            |        | BSD     | http://sourceforge.net/projects/kissfft/   |         |
+| cuFFT      | nVidia CUDA FFT                         | GPU (nVidia)   | nVidia |         | https://developer.nvidia.com/cuFFT         |         |
+|------------|-----------------------------------------|----------------|--------|---------|--------------------------------------------|---------|
 
-  MKL
-  IPP
-  FFTW
-  FFTS
-  KissFFT
+## MKL
 
-  Slow
-  Basic
+### API
 
-GPU:
+## IPP
 
-  CUDA
-  OpenCL?
+### API
 
-Precision of the implementations? / types of signal
+## FFTW
 
-Different HW plaforms? (Intel/AMD, AMD/nVidia)
+### API
 
+## FFTS
 
-Kiss FFT v1.30
-http://dfn.dl.sourceforge.net/project/kissfft/kissfft/v1_3_0/kiss_fft130.zip
+### API
+
+## KissFFT
+
+### API
+
+## cuFFT
+
+### API
