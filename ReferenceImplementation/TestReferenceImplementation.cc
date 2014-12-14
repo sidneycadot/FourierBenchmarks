@@ -46,7 +46,7 @@ int main(int argc, char ** argv)
         sscanf(argv[1], "%u", &time_limit_ms);
     }
 
-    unsigned TIME_LIMIT_US = time_limit_ms * 1000; // go from milliseconds to microseconds
+    const unsigned TIME_LIMIT_US = time_limit_ms * 1000; // go from milliseconds to microseconds
 
     // Prepare random number generator of GMP.
 
@@ -104,7 +104,7 @@ int main(int argc, char ** argv)
                     mpc_set_fr_fr(x[i], rnd_re, rnd_im, DEFAULT_MPC_ROUNDINGMODE);
                 }
 
-                // (2) Copy x to y. Our FFT is in-place, we need the original data to determine the error.
+                // (2) Copy x to y. Our reference FFT implementation is in-place; we need the original data to determine the error.
 
                 for (unsigned i = 0; i < num_points; ++i)
                 {
