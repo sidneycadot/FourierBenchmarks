@@ -15,7 +15,7 @@ void pow2_fft(const FourierTransformDirection direction, mpc_t * z, const unsign
         return;
     }
 
-    assert (n % 2 == 0);
+    assert (n % 2 == 0); // verify that n is even.
 
     // Do sub-FFTs on even / odd entries.
 
@@ -71,8 +71,8 @@ void pow2_fft(const FourierTransformDirection direction, mpc_t * z, const unsign
 
         // Forward transform:
         //
-        // temp[2 * i + 0] = z[stride * 2 * i] + coeff * z[stride * (2 * i + 1)];
-        // temp[2 * i + 1] = z[stride * 2 * i] - coeff * z[stride * (2 * i + 1)];
+        // temp[2 * i + 0] =        z[stride * 2 * i] + coeff * z[stride * (2 * i + 1)];
+        // temp[2 * i + 1] =        z[stride * 2 * i] - coeff * z[stride * (2 * i + 1)];
         //
         // Inverse transform:
         //
@@ -97,6 +97,7 @@ void pow2_fft(const FourierTransformDirection direction, mpc_t * z, const unsign
     mpfr_clear(turn);
 
     // Rearrange the temp[] entries into the z[] array.
+    // This is the 'butterfly' step.
 
     for (unsigned i = 0; i < n; ++i)
     {
